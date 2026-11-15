@@ -52,3 +52,9 @@ npm run telegram:set-webhook
 npm install
 npm run dev
 ```
+
+## Client source handover
+
+See [CLIENT-HANDOFF.md](./CLIENT-HANDOFF.md) for the complete installation, environment setup, MongoDB, Telegram administrator, and deployment instructions.
+
+Start from `.env.example`; never commit real credentials. The client source archive is built from the tracked project files and intentionally excludes local secrets, Git history, dependency folders, and build output.
