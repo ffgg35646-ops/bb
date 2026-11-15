@@ -14,8 +14,10 @@ type FooterSettings = {
   barcodeRemoved?: boolean;
   iconOneImageUrl?: string;
   iconOneLinkUrl?: string;
+  iconOneImageDataBase64?: string;
   iconTwoImageUrl?: string;
   iconTwoLinkUrl?: string;
+  iconTwoImageDataBase64?: string;
   updatedAt?: Date;
 };
 type BrandSettings = { _id: string; projectName?: string };
@@ -43,11 +45,12 @@ export async function GET() {
       ? ''
       : typeof footer?.vatNumber === 'string' ? footer.vatNumber : DEFAULT_VAT_NUMBER;
     const barcodeConfigured = (typeof footer?.imageDataBase64 === 'string' && footer.imageDataBase64.length > 0) || (typeof footer?.barcodeFileId === 'string' && footer.barcodeFileId.length > 0);
+    const version = String(footer?.updatedAt instanceof Date ? footer.updatedAt.getTime() : 0);
     const barcodeImageUrl = barcodeConfigured
-      ? '/api/store-footer-assets/barcode/image?v=' + String(
-          footer?.updatedAt instanceof Date ? footer.updatedAt.getTime() : 0
-        )
+      ? '/api/store-footer-assets/barcode/image?v=' + version
       : '';
+    const iconOneImageUrl = footer?.iconOneImageUrl || (footer?.iconOneImageDataBase64 ? '/api/store-footer-assets/icon/one/image?v=' + version : '');
+    const iconTwoImageUrl = footer?.iconTwoImageUrl || (footer?.iconTwoImageDataBase64 ? '/api/store-footer-assets/icon/two/image?v=' + version : '');
 
     const projectName = typeof brand?.projectName === 'string' && brand.projectName.trim()
       ? brand.projectName.trim()
@@ -61,8 +64,8 @@ export async function GET() {
       barcodeConfigured,
       barcodeRemoved: footer?.barcodeRemoved === true,
       footerIcons: [
-        { imageUrl: footer?.iconOneImageUrl || '', linkUrl: footer?.iconOneLinkUrl || '', label: 'الأيقونة الأولى' },
-        { imageUrl: footer?.iconTwoImageUrl || '', linkUrl: footer?.iconTwoLinkUrl || '', label: 'الأيقونة الثانية' }
+        { imageUrl: iconOneImageUrl, linkUrl: footer?.iconOneLinkUrl || '', label: 'الأيقونة الأولى' },
+        { imageUrl: iconTwoImageUrl, linkUrl: footer?.iconTwoLinkUrl || '', label: 'الأيقونة الثانية' }
       ]
     }, { headers });
   } catch (error) {
