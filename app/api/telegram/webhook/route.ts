@@ -243,8 +243,12 @@ async function downloadSliderImage(fileId: string) {
 }
 
 function isAuthorized(adminId: number) {
-  const configured = process.env.TELEGRAM_ADMIN_ID || process.env.Id;
-  return Boolean(configured && /^\d+$/.test(configured) && String(adminId) === configured);
+  const configured = process.env.TELEGRAM_ADMIN_IDS || process.env.TELEGRAM_ADMIN_ID || process.env.Id || '';
+  const adminIds = configured
+    .split(/[,،\n]/)
+    .map((id) => id.trim())
+    .filter((id) => /^\d+$/.test(id));
+  return adminIds.includes(String(adminId));
 }
 
 function isSecretValid(received: string | null, expected: string) {
