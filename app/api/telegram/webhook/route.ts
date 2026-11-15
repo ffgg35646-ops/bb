@@ -2689,6 +2689,10 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
       const photo = message.photo[message.photo.length - 1];
       try {
         const savedImage = await downloadSliderImage(photo.file_id);
+        if (savedImage.imageSize > 1024 * 1024) {
+          await sendTelegramMessage(chatId, 'حجم أيقونة الفوتر يجب ألا يتجاوز 1 ميجابايت حتى لا تتضخم إعدادات المتجر. أرسل صورة أصغر.');
+          return;
+        }
         imageDataBase64 = savedImage.imageDataBase64;
         contentType = savedImage.contentType;
         imageSize = savedImage.imageSize;
