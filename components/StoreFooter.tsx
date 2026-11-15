@@ -186,7 +186,7 @@ export default function StoreFooter() {
               {barcodeImageUrl ? (
                 <img src={barcodeImageUrl} alt="باركود المتجر" width={120} height={120} loading="lazy" />
               ) : barcodeRemoved ? (
-                <span className="store-footer-muted">تم حذف الباركود من الإدارة.</span>
+                <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
               ) : (
                 <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
               )}
