@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 
-type StoreSettings = { whatsappNumber?: string };
+type StoreSettings = { whatsappNumber?: string; projectName?: string };
 
 function normalizePhone(value: string) {
   return value.replace(/\D/g, '');
@@ -10,6 +10,7 @@ function normalizePhone(value: string) {
 
 export default function WhatsAppSupport() {
   const [phone, setPhone] = useState('');
+  const [projectName, setProjectName] = useState('أرض الجوال');
   const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
@@ -22,6 +23,7 @@ export default function WhatsAppSupport() {
         if (active) {
           const nextPhone = normalizePhone(data.whatsappNumber || '');
           setPhone(nextPhone);
+          if (typeof data.projectName === 'string' && data.projectName.trim()) setProjectName(data.projectName.trim());
           if (nextPhone) setUnavailable(false);
         }
       } catch {
@@ -44,11 +46,11 @@ export default function WhatsAppSupport() {
     <div className="whatsapp-support-wrap" dir="rtl">
       {unavailable ? <div className="whatsapp-support-note" role="status">رقم دعم واتساب لم يحدده المتجر بعد.</div> : null}
       {href ? (
-        <a className="whatsapp-support-button" href={href} target="_blank" rel="noopener noreferrer" aria-label="تواصل مع دعم أرض الجوال على واتساب" title="تواصل معنا واتساب">
+        <a className="whatsapp-support-button" href={href} target="_blank" rel="noopener noreferrer" aria-label={'تواصل مع دعم ' + projectName + ' على واتساب'} title="تواصل معنا واتساب">
           <WhatsAppIcon /><span>تواصل معنا</span>
         </a>
       ) : (
-        <button type="button" className="whatsapp-support-button" onClick={() => setUnavailable(true)} aria-label="تواصل مع دعم أرض الجوال على واتساب" title="تواصل معنا واتساب">
+        <button type="button" className="whatsapp-support-button" onClick={() => setUnavailable(true)} aria-label={'تواصل مع دعم ' + projectName + ' على واتساب'} title="تواصل معنا واتساب">
           <WhatsAppIcon /><span>تواصل معنا</span>
         </button>
       )}
