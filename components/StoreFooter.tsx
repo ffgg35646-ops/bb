@@ -188,9 +188,7 @@ export default function StoreFooter() {
               ) : barcodeRemoved ? (
                 <span className="store-footer-muted">تم حذف الباركود من الإدارة.</span>
               ) : (
-                <div className="footer-demo-barcode" aria-label="باركود المتجر">
-                  <svg viewBox="0 0 180 112" role="img" aria-label="باركود المتجر"><rect width="180" height="112" rx="8" fill="#fff"/><g fill="#202020">{Array.from({length: 42}, (_, i) => <rect key={i} x={7 + i * 3.95} y={7 + (i % 3)} width={i % 7 === 0 ? 2.8 : i % 4 === 0 ? 2.2 : 1.25} height={i % 5 === 0 ? 68 : i % 3 === 0 ? 76 : 62} />)}</g><rect x="56" y="31" width="68" height="28" rx="5" fill="#fff" stroke="#b28b37" strokeWidth="1.5"/><text x="90" y="49" fontSize="12" fontWeight="800" fill="#97712e" textAnchor="middle">المتجر</text></svg>
-                </div>
+                <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
               )}
               {footerIcons.map((icon, index) => {
                 const imageUrl = safeImageUrl(icon.imageUrl);
