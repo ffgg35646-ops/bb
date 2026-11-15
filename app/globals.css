@@ -6056,10 +6056,18 @@ body.erd-verify-waiting-screen .erd-wait-main {
 /* Footer icon slots beside the barcode: fixed spaces remain visible until configured. */
 .store-footer-barcode-items {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 10px;
+}
+.store-footer-icon-slots {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
   justify-content: flex-start;
   gap: 12px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 .store-footer-icon-item {
   display: inline-flex;
