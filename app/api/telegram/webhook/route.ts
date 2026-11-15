@@ -1417,7 +1417,7 @@ async function showFooterSettings(db: Db, chatId: number) {
   const iconOneStatus = settings?.iconOneImageUrl ? 'مضافة' : 'غير مضافة';
   const iconTwoStatus = settings?.iconTwoImageUrl ? 'مضافة' : 'غير مضافة';
   await sendTelegramMessage(chatId,
-    'تعديلات أخرى — إعدادات المتجر والفوتر\\n\\nاسم المشروع: ' + projectName + '\\nالرقم الضريبي: ' + vatNumber + '\\nالباركود: ' + barcodeStatus + '\\nالأيقونة الأولى: ' + iconOneStatus + '\\nالأيقونة الثانية: ' + iconTwoStatus + '\\n\\nاختر العنصر الذي تريد تعديله:',
+    'تعديلات أخرى — إعدادات المتجر والفوتر\n\nاسم المشروع: ' + projectName + '\nالرقم الضريبي: ' + vatNumber + '\nالباركود: ' + barcodeStatus + '\nالأيقونة الأولى: ' + iconOneStatus + '\nالأيقونة الثانية: ' + iconTwoStatus + '\n\nاختر العنصر الذي تريد تعديله:',
     {
       reply_markup: {
         inline_keyboard: [
@@ -1758,7 +1758,7 @@ async function handleCallback(db: Db, callback: TelegramCallback) {
       'footer_settings',
       'brand_project_name',
       {},
-      'أرسل اسم المشروع الجديد كما تريد ظهوره في واجهة المتجر.\\n\\nالاسم الحالي: ' + (brand?.projectName || 'أرض الجوال') + '\\nاكتب /cancel للإلغاء.'
+      'أرسل اسم المشروع الجديد كما تريد ظهوره في واجهة المتجر.\n\nالاسم الحالي: ' + (brand?.projectName || 'أرض الجوال') + '\nاكتب /cancel للإلغاء.'
     );
     return;
   }
@@ -1775,7 +1775,7 @@ async function handleCallback(db: Db, callback: TelegramCallback) {
       'footer_settings',
       'footer_icon_image',
       { footerIconSlot: slot },
-      label + ' — أرسل رابط صورة الأيقونة (HTTPS).\\n\\nالصورة الحالية: ' + (currentImage || 'غير مضافة') + '\\nالرابط الحالي: ' + (currentLink || 'غير مضاف') + '\\n\\nأرسل «مسح» لإزالة الأيقونة. اكتب /cancel للإلغاء.'
+      label + ' — أرسل رابط صورة الأيقونة (HTTPS).\n\nالصورة الحالية: ' + (currentImage || 'غير مضافة') + '\nالرابط الحالي: ' + (currentLink || 'غير مضاف') + '\n\nأرسل «مسح» لإزالة الأيقونة. اكتب /cancel للإلغاء.'
     );
     return;
   }
@@ -2649,7 +2649,7 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
       { upsert: true }
     );
     await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
-    await sendMainMenu(db, chatId, '✅ تم حفظ اسم المشروع الجديد: ' + projectName + '\\nسيظهر الاسم الجديد في واجهة المتجر.');
+    await sendMainMenu(db, chatId, '✅ تم حفظ اسم المشروع الجديد: ' + projectName + '\nسيظهر الاسم الجديد في واجهة المتجر.');
     return;
   }
 
