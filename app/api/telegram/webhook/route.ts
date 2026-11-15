@@ -2749,7 +2749,7 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
       updatedAt: new Date(),
       updatedByTelegramId: session.telegramUserId
     };
-    const unsetFields: Record<string, string> = {};
+    const unsetFields: Record<string, ''> = {};
     if (imageDataBase64) {
       setFields[dataField] = imageDataBase64;
       setFields[contentTypeField] = session.data.footerIconContentType || 'image/jpeg';
