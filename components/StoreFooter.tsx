@@ -75,7 +75,10 @@ function safeImageUrl(value: string) {
 export default function StoreFooter() {
   const [pages, setPages] = useState<StorePage[]>([]);
   const [projectName, setProjectName] = useState('أرض الجوال');
-  const [footerIcons, setFooterIcons] = useState<FooterIcon[]>([]);
+  const [footerIcons, setFooterIcons] = useState<FooterIcon[]>([
+    { imageUrl: '', linkUrl: '', label: 'الأيقونة الأولى' },
+    { imageUrl: '', linkUrl: '', label: 'الأيقونة الثانية' }
+  ]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState('201090466376');
   const [vatNumber, setVatNumber] = useState('4353454564');
@@ -182,7 +185,7 @@ export default function StoreFooter() {
 
           <div className="store-footer-column store-footer-barcode">
             <h2>الباركود</h2>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+            <div className="store-footer-barcode-items">
               {barcodeImageUrl ? (
                 <img src={barcodeImageUrl} alt="باركود المتجر" width={120} height={120} loading="lazy" />
               ) : barcodeRemoved ? (
@@ -190,14 +193,31 @@ export default function StoreFooter() {
               ) : (
                 <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
               )}
-              {footerIcons.map((icon, index) => {
+              {[0, 1].map((index) => {
+                const icon = footerIcons[index] || {
+                  imageUrl: '',
+                  linkUrl: '',
+                  label: index === 0 ? 'الأيقونة الأولى' : 'الأيقونة الثانية'
+                };
                 const imageUrl = safeImageUrl(icon.imageUrl);
                 const linkUrl = safeHttpsUrl(icon.linkUrl);
-                if (!imageUrl || !linkUrl) return null;
+                const label = icon.label || (index === 0 ? 'الأيقونة الأولى' : 'الأيقونة الثانية');
+                const slotContent = imageUrl
+                  ? <img src={imageUrl} alt={label} width={58} height={58} loading="lazy" />
+                  : <span className="store-footer-icon-placeholder-mark" aria-hidden="true">+</span>;
                 return (
-                  <a key={icon.label || index} href={linkUrl} target="_blank" rel="noopener noreferrer" aria-label={icon.label || 'رابط إضافي'} title={icon.label || 'رابط إضافي'} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <img src={imageUrl} alt={icon.label || 'أيقونة إضافية'} width={58} height={58} loading="lazy" style={{ width: 58, height: 58, objectFit: 'contain' }} />
-                  </a>
+                  <div className="store-footer-icon-item" key={index}>
+                    {imageUrl && linkUrl ? (
+                      <a className="store-footer-icon-slot is-filled" href={linkUrl} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}>
+                        {slotContent}
+                      </a>
+                    ) : (
+                      <span className={imageUrl ? 'store-footer-icon-slot is-filled' : 'store-footer-icon-slot is-empty'} aria-label={label} title={label}>
+                        {slotContent}
+                      </span>
+                    )}
+                    <small>{label}</small>
+                  </div>
                 );
               })}
             </div>
