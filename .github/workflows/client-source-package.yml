@@ -56,7 +56,7 @@ jobs:
           git archive --format=tar HEAD | tar -xf - -C staging
           cp package-lock.json staging/package-lock.json
           cp BUILD-STATUS.txt staging/BUILD-STATUS.txt
-          printf "Repository: ffgg35646-ops/bb\\nBranch snapshot: client-delivery-package\\nSource base commit: 0e755aaeb30e7c4b8e4f7\\n" > staging/PACKAGE-METADATA.txt
+          printf "Repository: ffgg35646-ops/bb\\nBranch snapshot: client-delivery-package\\nSource base commit: 0e755aaeb30fbd6fb7eb0ca4d509b4d9a014fe7c\\n" > staging/PACKAGE-METADATA.txt
           (cd staging && zip -qr ../BB-Client-Source.zip .)
           sha256sum BB-Client-Source.zip > BB-Client-Source.zip.sha256
           unzip -t BB-Client-Source.zip
