@@ -193,6 +193,7 @@ export default function StoreFooter() {
               ) : (
                 <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
               )}
+              <div className="store-footer-icon-slots">
               {[0, 1].map((index) => {
                 const icon = footerIcons[index] || {
                   imageUrl: '',
@@ -220,6 +221,7 @@ export default function StoreFooter() {
                   </div>
                 );
               })}
+              </div>
             </div>
           </div>
         </div>
