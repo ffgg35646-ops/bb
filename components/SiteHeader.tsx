@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import siteLogo from '@/wrwerwe.jpg';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useCart } from '@/components/CartProvider';
 import CustomerNotifications from '@/components/CustomerNotifications';
@@ -13,7 +12,7 @@ export default function SiteHeader() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [projectName, setProjectName] = useState('أرض الجوال');
-  const [logoSrc, setLogoSrc] = useState<string>(siteLogo.src);
+  const [logoSrc, setLogoSrc] = useState<string>('');
   const [logoFilter, setLogoFilter] = useState<string>('url(#remove-logo-black)');
 
   const categoryNames = catalogCategories.length
@@ -141,7 +140,7 @@ export default function SiteHeader() {
             <span>جميع الأقسام</span>
           </button>
 
-          <Link href="/" className="store-reference-brand" aria-label={projectName + ' - الرئيسية'}><Image src={logoSrc} alt={projectName} width={500} height={500} priority unoptimized style={{ width: 120, height: 64, objectFit: 'cover', objectPosition: 'center', filter: logoFilter }} /></Link>
+          <Link href="/" className="store-reference-brand" aria-label={projectName + ' - الرئيسية'}>{logoSrc ? <Image src={logoSrc} alt={projectName} width={500} height={500} priority unoptimized style={{ width: 120, height: 64, objectFit: 'cover', objectPosition: 'center', filter: logoFilter }} /> : <span className="store-logo-placeholder" aria-hidden="true" />}</Link>
 
           <form className={"header-search" + (searchOpen ? " is-open" : "")} role="search" onSubmit={submitSearch}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg>
