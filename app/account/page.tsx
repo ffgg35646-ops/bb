@@ -31,6 +31,7 @@ type CustomerOrder = {
 };
 
 type StoreSettings = {
+  projectName?: string;
   whatsappNumber?: string;
   barcodeImageUrl?: string;
   barcodeRemoved?: boolean;
@@ -91,6 +92,7 @@ export default function AccountPage() {
   const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [lookupMessage, setLookupMessage] = useState('');
   const [whatsappNumber, setWhatsappNumber] = useState('');
+  const [projectName, setProjectName] = useState('أرض الجوال');
   const [barcodeImageUrl, setBarcodeImageUrl] = useState('');
   const [barcodeRemoved, setBarcodeRemoved] = useState(false);
 
@@ -162,6 +164,7 @@ export default function AccountPage() {
         const data = await response.json() as StoreSettings;
         if (!alive) return;
         setWhatsappNumber(typeof data.whatsappNumber === 'string' ? data.whatsappNumber : '');
+        if (typeof data.projectName === 'string' && data.projectName.trim()) setProjectName(data.projectName.trim());
         setBarcodeImageUrl(typeof data.barcodeImageUrl === 'string' ? data.barcodeImageUrl : '');
         setBarcodeRemoved(data.barcodeRemoved === true);
       })
@@ -212,7 +215,7 @@ export default function AccountPage() {
   const phoneDigits = whatsappNumber.replace(/\D/g, '');
   const whatsappHref = /^\d{10,15}$/.test(phoneDigits)
     ? 'https://wa.me/' + phoneDigits + '?text=' + encodeURIComponent(
-        'مرحبًا، أحتاج مساعدة بخصوص ' + (latestOrderNumber ? 'الطلب ' + latestOrderNumber : 'طلب في متجر أرض الجوال')
+        'مرحبًا، أحتاج مساعدة بخصوص ' + (latestOrderNumber ? 'الطلب ' + latestOrderNumber : 'طلب في متجر ' + projectName)
       )
     : '';
 

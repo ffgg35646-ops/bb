@@ -12,7 +12,7 @@ export async function generateMetadata({ params }: ProductPageProps) {
   const product = getProduct(id);
   return {
     title: product ? product.name : 'تفاصيل المنتج',
-    description: product?.shortDescription || 'تفاصيل المنتج في أرض الجوال'
+    description: product?.shortDescription || 'تفاصيل المنتج في المتجر'
   };
 }
 

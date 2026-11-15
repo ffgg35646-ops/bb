@@ -24,6 +24,8 @@ function FooterLinkIcon({ name }: { name: FooterLinkIconName }) {
   }
 }
 
+type FooterIcon = { imageUrl: string; linkUrl: string; label: string };
+
 type StorePage = {
   key: string;
   title: string;
@@ -56,8 +58,24 @@ const FALLBACK_TEXT: Record<string, string> = {
   faq: 'لم تتم إضافة الأسئلة الشائعة بعد. أرسل استفسارك إلى خدمة العملاء وسنساعدك.'
 };
 
+function safeHttpsUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === 'https:' ? url.toString() : '';
+  } catch {
+    return '';
+  }
+}
+
+function safeImageUrl(value: string) {
+  if (value.startsWith('/') && !value.startsWith('//')) return value;
+  return safeHttpsUrl(value);
+}
+
 export default function StoreFooter() {
   const [pages, setPages] = useState<StorePage[]>([]);
+  const [projectName, setProjectName] = useState('أرض الجوال');
+  const [footerIcons, setFooterIcons] = useState<FooterIcon[]>([]);
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState('201090466376');
   const [vatNumber, setVatNumber] = useState('4353454564');
@@ -77,7 +95,9 @@ export default function StoreFooter() {
           if (alive && Array.isArray(data.pages)) setPages(data.pages);
         }
         if (settingsResponse.ok) {
-          const data = await settingsResponse.json() as { whatsappNumber?: string; vatNumber?: string; barcodeImageUrl?: string; barcodeConfigured?: boolean; barcodeRemoved?: boolean };
+          const data = await settingsResponse.json() as { projectName?: string; whatsappNumber?: string; vatNumber?: string; barcodeImageUrl?: string; barcodeConfigured?: boolean; barcodeRemoved?: boolean; footerIcons?: FooterIcon[] };
+          if (alive && typeof data.projectName === 'string' && data.projectName.trim()) setProjectName(data.projectName.trim());
+          if (alive && Array.isArray(data.footerIcons)) setFooterIcons(data.footerIcons);
           if (alive && typeof data.whatsappNumber === 'string') setWhatsappNumber(data.whatsappNumber);
           if (alive && typeof data.vatNumber === 'string') setVatNumber(data.vatNumber);
           // A successful settings response may explicitly report a removed/missing barcode.
@@ -135,7 +155,7 @@ export default function StoreFooter() {
         <div className="store-footer-inner container">
           <div className="store-footer-brand">
             <span className="stream-footer-mark store-footer-logo" aria-label="شعار المتجر"><svg viewBox="0 0 44 44" aria-hidden="true" focusable="false"><rect x="10" y="5" width="23" height="34" rx="5.5" fill="none" stroke="currentColor" strokeWidth="2.1"/><path d="M16 10h11M18 33h7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/><path d="M35 5.5l2.2 5.2 5.2 2.2-5.2 2.2-2.2 5.2-2.2-5.2-5.2-2.2 5.2-2.2z" fill="currentColor" transform="translate(-1 0) scale(.9)"/></svg></span>
-            <strong>أرض الجوال</strong>
+            <strong>{projectName}</strong>
             <p className="store-footer-vat">الرقم الضريبي: {vatNumber ? <bdi dir="ltr">{vatNumber}</bdi> : <span>لم يُضف رقم ضريبي</span>}</p>
             <p>متجر متخصص في الجوالات وملحقاتها، مع أقسام تساعدك على الوصول إلى المنتجات بسهولة.</p>
             <small>© {new Date().getFullYear()} المتجر. جميع الحقوق محفوظة.</small>
@@ -162,15 +182,25 @@ export default function StoreFooter() {
 
           <div className="store-footer-column store-footer-barcode">
             <h2>الباركود</h2>
-            {barcodeImageUrl ? (
-              <img src={barcodeImageUrl} alt="باركود المتجر" width={150} height={150} loading="lazy" />
-            ) : barcodeRemoved ? (
-              <span className="store-footer-muted">تم حذف الباركود من الإدارة.</span>
-            ) : (
-              <div className="footer-demo-barcode" aria-label="باركود المتجر">
-                <svg viewBox="0 0 180 112" role="img" aria-label="باركود المتجر"><rect width="180" height="112" rx="8" fill="#fff"/><g fill="#202020">{Array.from({length: 42}, (_, i) => <rect key={i} x={7 + i * 3.95} y={7 + (i % 3)} width={i % 7 === 0 ? 2.8 : i % 4 === 0 ? 2.2 : 1.25} height={i % 5 === 0 ? 68 : i % 3 === 0 ? 76 : 62} />)}</g><rect x="56" y="31" width="68" height="28" rx="5" fill="#fff" stroke="#b28b37" strokeWidth="1.5"/><text x="90" y="49" fontSize="12" fontWeight="800" fill="#97712e" textAnchor="middle">المتجر</text></svg>
-              </div>
-            )}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 12, flexWrap: 'wrap' }}>
+              {barcodeImageUrl ? (
+                <img src={barcodeImageUrl} alt="باركود المتجر" width={120} height={120} loading="lazy" />
+              ) : barcodeRemoved ? (
+                <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
+              ) : (
+                <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
+              )}
+              {footerIcons.map((icon, index) => {
+                const imageUrl = safeImageUrl(icon.imageUrl);
+                const linkUrl = safeHttpsUrl(icon.linkUrl);
+                if (!imageUrl || !linkUrl) return null;
+                return (
+                  <a key={icon.label || index} href={linkUrl} target="_blank" rel="noopener noreferrer" aria-label={icon.label || 'رابط إضافي'} title={icon.label || 'رابط إضافي'} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <img src={imageUrl} alt={icon.label || 'أيقونة إضافية'} width={58} height={58} loading="lazy" style={{ width: 58, height: 58, objectFit: 'contain' }} />
+                  </a>
+                );
+              })}
+            </div>
           </div>
         </div>
 

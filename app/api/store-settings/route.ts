@@ -12,8 +12,15 @@ type FooterSettings = {
   imageDataBase64?: string;
   vatNumberRemoved?: boolean;
   barcodeRemoved?: boolean;
+  iconOneImageUrl?: string;
+  iconOneLinkUrl?: string;
+  iconOneImageDataBase64?: string;
+  iconTwoImageUrl?: string;
+  iconTwoLinkUrl?: string;
+  iconTwoImageDataBase64?: string;
   updatedAt?: Date;
 };
+type BrandSettings = { _id: string; projectName?: string };
 
 const DEFAULT_WHATSAPP_NUMBER = '201090466376';
 const DEFAULT_VAT_NUMBER = '4353454564';
@@ -26,9 +33,10 @@ export async function GET() {
 
   try {
     const db = await getDb();
-    const [contact, footer] = await Promise.all([
+    const [contact, footer, brand] = await Promise.all([
       db.collection<ContactSettings>('store_settings').findOne({ _id: 'contact' }),
-      db.collection<FooterSettings>('store_settings').findOne({ _id: 'footer' })
+      db.collection<FooterSettings>('store_settings').findOne({ _id: 'footer' }),
+      db.collection<BrandSettings>('store_settings').findOne({ _id: 'brand' })
     ]);
     const whatsappNumber = contact?.whatsappNumberRemoved
       ? ''
@@ -37,18 +45,28 @@ export async function GET() {
       ? ''
       : typeof footer?.vatNumber === 'string' ? footer.vatNumber : DEFAULT_VAT_NUMBER;
     const barcodeConfigured = (typeof footer?.imageDataBase64 === 'string' && footer.imageDataBase64.length > 0) || (typeof footer?.barcodeFileId === 'string' && footer.barcodeFileId.length > 0);
+    const version = String(footer?.updatedAt instanceof Date ? footer.updatedAt.getTime() : 0);
     const barcodeImageUrl = barcodeConfigured
-      ? '/api/store-footer-assets/barcode/image?v=' + String(
-          footer?.updatedAt instanceof Date ? footer.updatedAt.getTime() : 0
-        )
+      ? '/api/store-footer-assets/barcode/image?v=' + version
       : '';
+    const iconOneImageUrl = footer?.iconOneImageUrl || (footer?.iconOneImageDataBase64 ? '/api/store-footer-assets/icon/one/image?v=' + version : '');
+    const iconTwoImageUrl = footer?.iconTwoImageUrl || (footer?.iconTwoImageDataBase64 ? '/api/store-footer-assets/icon/two/image?v=' + version : '');
+
+    const projectName = typeof brand?.projectName === 'string' && brand.projectName.trim()
+      ? brand.projectName.trim()
+      : 'أرض الجوال';
 
     return NextResponse.json({
+      projectName,
       whatsappNumber,
       vatNumber,
       barcodeImageUrl,
       barcodeConfigured,
-      barcodeRemoved: footer?.barcodeRemoved === true
+      barcodeRemoved: footer?.barcodeRemoved === true,
+      footerIcons: [
+        { imageUrl: iconOneImageUrl, linkUrl: footer?.iconOneLinkUrl || '', label: 'الأيقونة الأولى' },
+        { imageUrl: iconTwoImageUrl, linkUrl: footer?.iconTwoLinkUrl || '', label: 'الأيقونة الثانية' }
+      ]
     }, { headers });
   } catch (error) {
     console.error('Store settings read failed:', error instanceof Error ? error.message : 'Unknown error');

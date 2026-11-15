@@ -60,6 +60,11 @@ type FlowData = {
   bannerId?: string;
   footerKey?: string;
   footerSettingKey?: 'vat' | 'barcode';
+  footerIconSlot?: 'one' | 'two';
+  footerIconImageUrl?: string;
+  footerIconImageDataBase64?: string;
+  footerIconContentType?: string;
+  footerIconImageSize?: number;
   content?: string;
   searchQuery?: string;
   searchMessageId?: number;
@@ -72,7 +77,8 @@ type FlowStep =
   | 'edit_product_name' | 'edit_product_colors' | 'edit_product_storage' | 'edit_product_price' | 'edit_product_details' | 'edit_product_images' | 'edit_product_color_image'
   | 'edit_product_storage_add' | 'edit_product_storage_select_edit' | 'edit_product_storage_edit_value' | 'edit_product_storage_select_delete'
   | 'contact_whatsapp' | 'cancel_reason' | 'slider_image' | 'footer_edit_text' | 'footer_confirm_save'
-  | 'footer_vat_number' | 'footer_barcode_image' | 'store_logo_image' | 'search_products';
+  | 'footer_vat_number' | 'footer_barcode_image' | 'brand_project_name' | 'footer_icon_image' | 'footer_icon_link'
+  | 'store_logo_image' | 'search_products';
 
 type AdminSession = {
   telegramUserId: number;
@@ -309,10 +315,14 @@ async function getOrderSectionCounts(db: Db) {
   return { newCount, shippedCount };
 }
 
-async function sendMainMenu(db: Db, chatId: number, message = 'أهلًا بك في لوحة إدارة أرض الجوال. اختر القسم المطلوب:') {
+async function sendMainMenu(db: Db, chatId: number, message?: string) {
   await ensureDefaultProducts(db);
-  const counts = await getOrderSectionCounts(db);
-  await sendTelegramMessage(chatId, message, {
+  const [counts, brand] = await Promise.all([
+    getOrderSectionCounts(db),
+    db.collection<{ _id: string; projectName?: string }>('store_settings').findOne({ _id: 'brand' })
+  ]);
+  const projectName = typeof brand?.projectName === 'string' && brand.projectName.trim() ? brand.projectName.trim() : 'أرض الجوال';
+  await sendTelegramMessage(chatId, message || `أهلًا بك في لوحة إدارة ${projectName}. اختر القسم المطلوب:`, {
     reply_markup: adminReplyKeyboard(counts.newCount + counts.shippedCount)
   });
 }
@@ -1398,18 +1408,24 @@ async function showStoreLogoMenu(db: Db, chatId: number) {
 }
 
 async function showFooterSettings(db: Db, chatId: number) {
-  const [settings, reviewCount] = await Promise.all([
-    db.collection<{ _id: string; vatNumber?: string; vatNumberRemoved?: boolean; barcodeFileId?: string; barcodeRemoved?: boolean }>('store_settings')
+  const [settings, brand, reviewCount] = await Promise.all([
+    db.collection<{ _id: string; vatNumber?: string; vatNumberRemoved?: boolean; barcodeFileId?: string; barcodeRemoved?: boolean; iconOneImageUrl?: string; iconTwoImageUrl?: string; iconOneImageDataBase64?: string; iconTwoImageDataBase64?: string }>('store_settings')
       .findOne({ _id: 'footer' }),
+    db.collection<{ _id: string; projectName?: string }>('store_settings').findOne({ _id: 'brand' }),
     db.collection('customer_reviews').countDocuments({})
   ]);
   const vatNumber = settings?.vatNumberRemoved ? 'محذوف' : settings?.vatNumber || '4353454564';
+  const projectName = typeof brand?.projectName === 'string' && brand.projectName.trim() ? brand.projectName.trim() : 'أرض الجوال';
   const barcodeStatus = settings?.barcodeFileId ? 'تمت إضافته' : settings?.barcodeRemoved ? 'محذوف' : 'باركود تصميمي مؤقت ظاهر في المتجر';
+  const iconOneStatus = settings?.iconOneImageUrl || settings?.iconOneImageDataBase64 ? 'مضافة' : 'غير مضافة';
+  const iconTwoStatus = settings?.iconTwoImageUrl || settings?.iconTwoImageDataBase64 ? 'مضافة' : 'غير مضافة';
   await sendTelegramMessage(chatId,
-    'تعديلات أخرى — إعدادات المتجر والفوتر\n\nالرقم الضريبي: ' + vatNumber + '\nالباركود: ' + barcodeStatus + '\n\nاختر العنصر الذي تريد تعديله:',
+    'تعديلات أخرى — إعدادات المتجر والفوتر\n\nاسم المشروع: ' + projectName + '\nالرقم الضريبي: ' + vatNumber + '\nالباركود: ' + barcodeStatus + '\nالأيقونة الأولى: ' + iconOneStatus + '\nالأيقونة الثانية: ' + iconTwoStatus + '\n\nاختر العنصر الذي تريد تعديله:',
     {
       reply_markup: {
         inline_keyboard: [
+          [{ text: 'اسم المشروع', callback_data: 'footer-setting:project-name' }],
+          [{ text: 'الأيقونة الأولى', callback_data: 'footer-setting:icon-one' }, { text: 'الأيقونة الثانية', callback_data: 'footer-setting:icon-two' }],
           [{ text: 'الرقم الضريبي', callback_data: 'footer-setting:vat' }, { text: 'الباركود', callback_data: 'footer-setting:barcode' }],
           [{ text: '🖼️ تعديل الشعار', callback_data: 'footer-setting:logo' }, { text: '🖼️ السلايدر', callback_data: 'footer-setting:slider' }],
           [{ text: 'السياسات', callback_data: 'footer-setting:policies' }, { text: 'خدمات العملاء', callback_data: 'footer-setting:customer-service' }],
@@ -1733,6 +1749,36 @@ async function handleCallback(db: Db, callback: TelegramCallback) {
       'store_logo_image',
       { logoBackgroundMode: id },
       'أرسل صورة الشعار الجديدة'
+    );
+    return;
+  }
+  if (action === 'footer-setting' && id === 'project-name') {
+    const brand = await db.collection<{ _id: string; projectName?: string }>('store_settings').findOne({ _id: 'brand' });
+    await startFlow(
+      db,
+      callback.from.id,
+      chatId,
+      'footer_settings',
+      'brand_project_name',
+      {},
+      'أرسل اسم المشروع الجديد كما تريد ظهوره في واجهة المتجر.\n\nالاسم الحالي: ' + (brand?.projectName || 'أرض الجوال') + '\nاكتب /cancel للإلغاء.'
+    );
+    return;
+  }
+  if (action === 'footer-setting' && (id === 'icon-one' || id === 'icon-two')) {
+    const slot = id === 'icon-one' ? 'one' : 'two';
+    const label = slot === 'one' ? 'الأيقونة الأولى' : 'الأيقونة الثانية';
+    const footer = await db.collection<{ _id: string; iconOneImageUrl?: string; iconTwoImageUrl?: string; iconOneLinkUrl?: string; iconTwoLinkUrl?: string; iconOneImageDataBase64?: string; iconTwoImageDataBase64?: string }>('store_settings').findOne({ _id: 'footer' });
+    const currentImage = slot === 'one' ? footer?.iconOneImageUrl : footer?.iconTwoImageUrl;
+    const currentLink = slot === 'one' ? footer?.iconOneLinkUrl : footer?.iconTwoLinkUrl;
+    await startFlow(
+      db,
+      callback.from.id,
+      chatId,
+      'footer_settings',
+      'footer_icon_image',
+      { footerIconSlot: slot },
+      label + ' — أرسل صورة الأيقونة كصورة في تيليجرام، أو أرسل رابط صورة يبدأ بـ https://.\n\nالصورة الحالية: ' + (currentImage || 'غير مضافة') + '\nالرابط الحالي: ' + (currentLink || 'غير مضاف') + '\n\nأرسل «مسح» لإزالة الأيقونة. اكتب /cancel للإلغاء.'
     );
     return;
   }
@@ -2591,6 +2637,137 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
     });
     await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
     await sendMainMenu(db, chatId, '✅ تمت إضافة صورة السلايدر وحفظها في المتجر.');
+    return;
+  }
+
+  if (session.workflow === 'footer_settings' && session.step === 'brand_project_name') {
+    const projectName = value.trim();
+    if (!projectName || projectName.length > 60) {
+      await sendTelegramMessage(chatId, 'اسم المشروع غير صالح. أرسل اسمًا من حرف واحد إلى 60 حرفًا.');
+      return;
+    }
+    await db.collection<{ _id: string; projectName?: string; updatedAt?: Date; updatedByTelegramId?: number }>('store_settings').updateOne(
+      { _id: 'brand' },
+      { $set: { projectName, updatedAt: new Date(), updatedByTelegramId: session.telegramUserId } },
+      { upsert: true }
+    );
+    await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+    await sendMainMenu(db, chatId, '✅ تم حفظ اسم المشروع الجديد: ' + projectName + '\nسيظهر الاسم الجديد في واجهة المتجر.');
+    return;
+  }
+
+  if (session.workflow === 'footer_settings' && session.step === 'footer_icon_image') {
+    const slot = session.data.footerIconSlot;
+    if (slot !== 'one' && slot !== 'two') {
+      await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+      await sendMainMenu(db, chatId, 'انتهت جلسة تعديل الأيقونة. ابدأ من «تعديلات أخرى».');
+      return;
+    }
+    const imageField = slot === 'one' ? 'iconOneImageUrl' : 'iconTwoImageUrl';
+    const dataField = slot === 'one' ? 'iconOneImageDataBase64' : 'iconTwoImageDataBase64';
+    const contentTypeField = slot === 'one' ? 'iconOneContentType' : 'iconTwoContentType';
+    const sizeField = slot === 'one' ? 'iconOneImageSize' : 'iconTwoImageSize';
+    const linkField = slot === 'one' ? 'iconOneLinkUrl' : 'iconTwoLinkUrl';
+    if (value === 'مسح' || value === 'حذف') {
+      await db.collection('store_settings').updateOne(
+        { _id: 'footer' },
+        {
+          $unset: { [imageField]: '', [dataField]: '', [contentTypeField]: '', [sizeField]: '', [linkField]: '' },
+          $set: { updatedAt: new Date(), updatedByTelegramId: session.telegramUserId }
+        }
+      );
+      await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+      await sendMainMenu(db, chatId, '✅ تم حذف الأيقونة من الفوتر.');
+      return;
+    }
+
+    let imageUrl = '';
+    let imageDataBase64 = '';
+    let contentType = '';
+    let imageSize = 0;
+    if (message.photo?.length) {
+      const photo = message.photo[message.photo.length - 1];
+      try {
+        const savedImage = await downloadSliderImage(photo.file_id);
+        if (savedImage.imageSize > 1024 * 1024) {
+          await sendTelegramMessage(chatId, 'حجم أيقونة الفوتر يجب ألا يتجاوز 1 ميجابايت حتى لا تتضخم إعدادات المتجر. أرسل صورة أصغر.');
+          return;
+        }
+        imageDataBase64 = savedImage.imageDataBase64;
+        contentType = savedImage.contentType;
+        imageSize = savedImage.imageSize;
+      } catch (error) {
+        console.error('Footer icon image download failed:', error instanceof Error ? error.message : 'Unknown error');
+        await sendTelegramMessage(chatId, 'تعذر حفظ صورة الأيقونة. أرسل صورة أصغر من 8 ميجابايت أو أرسل رابط صورة يبدأ بـ https://.');
+        return;
+      }
+    } else {
+      let parsedUrl: URL | null = null;
+      try { parsedUrl = new URL(value.trim()); } catch { /* Invalid URL is handled below. */ }
+      if (!parsedUrl || parsedUrl.protocol !== 'https:' || value.trim().length > 1500) {
+        await sendTelegramMessage(chatId, 'أرسل صورة الأيقونة كصورة في تيليجرام أو رابط صورة يبدأ بـ https://. أو أرسل «مسح».');
+        return;
+      }
+      imageUrl = parsedUrl.toString();
+    }
+
+    session.step = 'footer_icon_link';
+    session.data = {
+      ...session.data,
+      footerIconImageUrl: imageUrl,
+      footerIconImageDataBase64: imageDataBase64,
+      footerIconContentType: contentType,
+      footerIconImageSize: imageSize
+    };
+    await saveSession(db, session);
+    await sendTelegramMessage(chatId, 'تم استلام صورة الأيقونة. أرسل الآن رابط الصفحة أو الموقع الذي يفتح عند الضغط عليها (يجب أن يبدأ بـ https://).');
+    return;
+  }
+
+  if (session.workflow === 'footer_settings' && session.step === 'footer_icon_link') {
+    const slot = session.data.footerIconSlot;
+    const imageUrl = session.data.footerIconImageUrl || '';
+    const imageDataBase64 = session.data.footerIconImageDataBase64 || '';
+    if ((slot !== 'one' && slot !== 'two') || (!imageUrl && !imageDataBase64)) {
+      await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+      await sendMainMenu(db, chatId, 'تعذر إكمال إعداد الأيقونة. ابدأ مرة أخرى من «تعديلات أخرى».');
+      return;
+    }
+    let linkUrl: URL | null = null;
+    try { linkUrl = new URL(value.trim()); } catch { /* Invalid URL is handled below. */ }
+    if (!linkUrl || linkUrl.protocol !== 'https:' || value.trim().length > 1500) {
+      await sendTelegramMessage(chatId, 'رابط الوجهة غير صالح. أرسل رابطًا يبدأ بـ https://.');
+      return;
+    }
+    const imageField = slot === 'one' ? 'iconOneImageUrl' : 'iconTwoImageUrl';
+    const dataField = slot === 'one' ? 'iconOneImageDataBase64' : 'iconTwoImageDataBase64';
+    const contentTypeField = slot === 'one' ? 'iconOneContentType' : 'iconTwoContentType';
+    const sizeField = slot === 'one' ? 'iconOneImageSize' : 'iconTwoImageSize';
+    const linkField = slot === 'one' ? 'iconOneLinkUrl' : 'iconTwoLinkUrl';
+    const setFields: Record<string, unknown> = {
+      [linkField]: linkUrl.toString(),
+      updatedAt: new Date(),
+      updatedByTelegramId: session.telegramUserId
+    };
+    const unsetFields: Record<string, string> = {};
+    if (imageDataBase64) {
+      setFields[dataField] = imageDataBase64;
+      setFields[contentTypeField] = session.data.footerIconContentType || 'image/jpeg';
+      setFields[sizeField] = session.data.footerIconImageSize || 0;
+      unsetFields[imageField] = '';
+    } else {
+      setFields[imageField] = imageUrl;
+      unsetFields[dataField] = '';
+      unsetFields[contentTypeField] = '';
+      unsetFields[sizeField] = '';
+    }
+    await db.collection('store_settings').updateOne(
+      { _id: 'footer' },
+      { $set: setFields, $unset: unsetFields },
+      { upsert: true }
+    );
+    await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+    await sendMainMenu(db, chatId, '✅ تم حفظ الأيقونة ورابطها، وستظهر بجوار الباركود في الفوتر.');
     return;
   }
 

@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import siteLogo from '@/wrwerwe.jpg';
 import { useEffect, useState, type FormEvent } from 'react';
 import { useCart } from '@/components/CartProvider';
 import CustomerNotifications from '@/components/CustomerNotifications';
@@ -12,7 +11,8 @@ export default function SiteHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [search, setSearch] = useState('');
-  const [logoSrc, setLogoSrc] = useState<string>(siteLogo.src);
+  const [projectName, setProjectName] = useState('أرض الجوال');
+  const [logoSrc, setLogoSrc] = useState<string>('');
   const [logoFilter, setLogoFilter] = useState<string>('url(#remove-logo-black)');
 
   const categoryNames = catalogCategories.length
@@ -26,6 +26,25 @@ export default function SiteHeader() {
 
   useEffect(() => {
     setSearch(new URLSearchParams(window.location.search).get('q') || '');
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    async function loadProjectName() {
+      try {
+        const response = await fetch('/api/store-settings', { cache: 'no-store' });
+        if (!response.ok) return;
+        const data = await response.json() as { projectName?: string };
+        if (active && typeof data.projectName === 'string' && data.projectName.trim()) {
+          setProjectName(data.projectName.trim());
+        }
+      } catch {
+        // Keep the default brand name if settings are temporarily unavailable.
+      }
+    }
+    void loadProjectName();
+    const timer = window.setInterval(() => { void loadProjectName(); }, 30_000);
+    return () => { active = false; window.clearInterval(timer); };
   }, []);
 
   useEffect(() => {
@@ -100,7 +119,7 @@ export default function SiteHeader() {
       </svg>
       <div className="store-utility-bar">
         <div className="container store-utility-inner">
-          <span>أرض الجوال • الجوالات والأجهزة وملحقاتها</span>
+          <span>{projectName} • الجوالات والأجهزة وملحقاتها</span>
           <div className="store-utility-options">
             <a href="/#store-site-footer">خدمة العملاء</a>
             <span>الأسعار بالريال السعودي</span>
@@ -121,7 +140,7 @@ export default function SiteHeader() {
             <span>جميع الأقسام</span>
           </button>
 
-          <Link href="/" className="store-reference-brand" aria-label="أرض الجوال - الرئيسية"><Image src={logoSrc} alt="أرض الجوال" width={500} height={500} priority unoptimized style={{ width: 120, height: 64, objectFit: 'cover', objectPosition: 'center', filter: logoFilter }} /></Link>
+          <Link href="/" className="store-reference-brand" aria-label={projectName + ' - الرئيسية'}>{logoSrc ? <Image src={logoSrc} alt={projectName} width={500} height={500} priority unoptimized style={{ width: 120, height: 64, objectFit: 'cover', objectPosition: 'center', filter: logoFilter }} /> : <span className="store-logo-placeholder" aria-hidden="true" style={{ display: "block", width: 120, height: 64, border: "1px dashed currentColor", borderRadius: 8, opacity: 0.28 }} />}</Link>
 
           <form className={"header-search" + (searchOpen ? " is-open" : "")} role="search" onSubmit={submitSearch}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg>
@@ -129,7 +148,7 @@ export default function SiteHeader() {
               type="search"
               value={search}
               onChange={(event) => updateSearch(event.target.value)}
-              placeholder="ابحث في أرض الجوال عن منتج أو فئة..."
+              placeholder={'ابحث في ' + projectName + ' عن منتج أو فئة...'}
               aria-label="ابحث عن منتج"
             />
             <button type="submit" className="header-search-submit">بحث</button>
