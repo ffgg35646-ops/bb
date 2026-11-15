@@ -67,6 +67,11 @@ function safeHttpsUrl(value: string) {
   }
 }
 
+function safeImageUrl(value: string) {
+  if (value.startsWith('/') && !value.startsWith('//')) return value;
+  return safeHttpsUrl(value);
+}
+
 export default function StoreFooter() {
   const [pages, setPages] = useState<StorePage[]>([]);
   const [projectName, setProjectName] = useState('أرض الجوال');
@@ -188,7 +193,7 @@ export default function StoreFooter() {
                 </div>
               )}
               {footerIcons.map((icon, index) => {
-                const imageUrl = safeHttpsUrl(icon.imageUrl);
+                const imageUrl = safeImageUrl(icon.imageUrl);
                 const linkUrl = safeHttpsUrl(icon.linkUrl);
                 if (!imageUrl || !linkUrl) return null;
                 return (
