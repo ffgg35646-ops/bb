@@ -30,7 +30,7 @@
 - `MONGODB_URI`
 - `MONGODB_DB=erd_algwal`
 - `TELEGRAM_BOT_TOKEN`
-- `TELEGRAM_ADMIN_ID=5569918211`
+- `TELEGRAM_ADMIN_IDS=5569918211,2222222222` — معرّفات الأدمن مفصولة بفاصلة (يمكن إضافة أكثر من ID). وللتوافق مع الإعداد القديم يمكن استخدام `TELEGRAM_ADMIN_ID` لمعرّف واحد.
 - `TELEGRAM_WEBHOOK_SECRET`
 - `TELEGRAM_WEBHOOK_URL` — رابط HTTPS المنشور وينتهي بـ `/api/telegram/webhook`.
 - `MODEL_API_KEY` — مفتاح Meta Model API لتوليد قناع عزل الجراب عند إضافة منتج جراب أو تجهيز صورته من البوت. يُستخدم على الخادم فقط ولا يوضع في متغير يبدأ بـ `NEXT_PUBLIC_`.
