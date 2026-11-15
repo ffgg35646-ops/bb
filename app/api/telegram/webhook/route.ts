@@ -2669,7 +2669,7 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
     const sizeField = slot === 'one' ? 'iconOneImageSize' : 'iconTwoImageSize';
     const linkField = slot === 'one' ? 'iconOneLinkUrl' : 'iconTwoLinkUrl';
     if (value === 'مسح' || value === 'حذف') {
-      await db.collection('store_settings').updateOne(
+      await db.collection<{ _id: string; updatedAt?: Date; updatedByTelegramId?: number }>('store_settings').updateOne(
         { _id: 'footer' },
         {
           $unset: { [imageField]: '', [dataField]: '', [contentTypeField]: '', [sizeField]: '', [linkField]: '' },
@@ -2761,7 +2761,7 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
       unsetFields[contentTypeField] = '';
       unsetFields[sizeField] = '';
     }
-    await db.collection('store_settings').updateOne(
+    await db.collection<{ _id: string; updatedAt?: Date; updatedByTelegramId?: number }>('store_settings').updateOne(
       { _id: 'footer' },
       { $set: setFields, $unset: unsetFields },
       { upsert: true }
