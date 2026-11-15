@@ -140,7 +140,7 @@ export default function SiteHeader() {
             <span>جميع الأقسام</span>
           </button>
 
-          <Link href="/" className="store-reference-brand" aria-label={projectName + ' - الرئيسية'}>{logoSrc ? <Image src={logoSrc} alt={projectName} width={500} height={500} priority unoptimized style={{ width: 120, height: 64, objectFit: 'cover', objectPosition: 'center', filter: logoFilter }} /> : <span className="store-logo-placeholder" aria-hidden="true" />}</Link>
+          <Link href="/" className="store-reference-brand" aria-label={projectName + ' - الرئيسية'}>{logoSrc ? <Image src={logoSrc} alt={projectName} width={500} height={500} priority unoptimized style={{ width: 120, height: 64, objectFit: 'cover', objectPosition: 'center', filter: logoFilter }} /> : <span className="store-logo-placeholder" aria-hidden="true" style={{ display: "block", width: 120, height: 64, border: "1px dashed currentColor", borderRadius: 8, opacity: 0.28 }} />}</Link>
 
           <form className={"header-search" + (searchOpen ? " is-open" : "")} role="search" onSubmit={submitSearch}>
             <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.5 4.5" /></svg>
