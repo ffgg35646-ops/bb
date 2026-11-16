@@ -58,6 +58,26 @@ function getProductColorHex(color: string) {
   return PRODUCT_COLOR_HEX[normalized] || '#b7b7b7';
 }
 
+function getProductCardImageCandidates(product: Product) {
+  const colorImages = product.colorImages || {};
+  const firstColorImage = (product.colors || [])
+    .map((color) => colorImages[color]
+      || Object.entries(colorImages).find(([storedColor]) => (
+        normalizeProductColorName(storedColor) === normalizeProductColorName(color)
+      ))?.[1]
+      || '')
+    .find((image) => Boolean(image))
+    || Object.values(colorImages).find((image) => Boolean(image))
+    || '';
+
+  return Array.from(new Set([
+    product.image,
+    firstColorImage,
+    ...(product.images || []),
+    ...Object.values(colorImages)
+  ].filter((image): image is string => typeof image === 'string' && image.trim().length > 0)));
+}
+
 function normalizeSearchValue(value: string | number) {
   return String(value)
     .normalize('NFKC')
@@ -496,6 +516,16 @@ function AutoProductSlider({ categoryName, products }: { categoryName: string; p
 function StripProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  const imageCandidates = useMemo(
+    () => getProductCardImageCandidates(product),
+    [product.image, product.images, product.colorImages, product.colors]
+  );
+  const [imageIndex, setImageIndex] = useState(0);
+
+  useEffect(() => {
+    setImageIndex(0);
+  }, [product.id, imageCandidates]);
+
   const availableProductColors = Array.from(new Set((product.colors || [])
     .filter((color) => typeof color === 'string' && color.trim())
     .map(normalizeProductColorName)));
@@ -510,12 +540,11 @@ function StripProductCard({ product }: { product: Product }) {
     <article className="strip-product-card">
       <Link href={'/products/' + product.id} className="strip-product-image" aria-label={'تفاصيل ' + product.name}>
         <img
-          src={product.image}
+          src={imageCandidates[imageIndex] || '/product-image-placeholder.svg'}
           alt={product.name}
           loading="lazy"
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = '/product-image-placeholder.svg';
+          onError={() => {
+            setImageIndex((current) => current < imageCandidates.length ? current + 1 : current);
           }}
         />
         {product.badge ? <span className="strip-product-badge">{product.badge}</span> : null}
