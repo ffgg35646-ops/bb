@@ -1,7 +1,7 @@
 import { MongoClient, type Db } from 'mongodb';
 
 const globalForMongo = globalThis as typeof globalThis & {
-  _erdAlgwalMongoClientPromise?: Promise<MongoClient>;
+  _bbMongoClientPromise?: Promise<MongoClient>;
 };
 
 let localClientPromise: Promise<MongoClient> | undefined;
@@ -13,20 +13,20 @@ function getClientPromise(): Promise<MongoClient> {
   }
 
   if (process.env.NODE_ENV !== 'production') {
-    if (!globalForMongo._erdAlgwalMongoClientPromise) {
+    if (!globalForMongo._bbMongoClientPromise) {
       const client = new MongoClient(uri);
       let cachedConnection: Promise<MongoClient>;
       cachedConnection = client.connect().catch((error) => {
         // Do not keep a rejected promise cached after a transient network/TLS failure.
-        if (globalForMongo._erdAlgwalMongoClientPromise === cachedConnection) {
-          globalForMongo._erdAlgwalMongoClientPromise = undefined;
+        if (globalForMongo._bbMongoClientPromise === cachedConnection) {
+          globalForMongo._bbMongoClientPromise = undefined;
         }
         void client.close().catch(() => undefined);
         throw error;
       });
-      globalForMongo._erdAlgwalMongoClientPromise = cachedConnection;
+      globalForMongo._bbMongoClientPromise = cachedConnection;
     }
-    return globalForMongo._erdAlgwalMongoClientPromise;
+    return globalForMongo._bbMongoClientPromise;
   }
 
   if (!localClientPromise) {
@@ -48,5 +48,5 @@ function getClientPromise(): Promise<MongoClient> {
 
 export async function getDb(): Promise<Db> {
   const client = await getClientPromise();
-  return client.db(process.env.MONGODB_DB || 'erd_algwal');
+  return client.db(process.env.MONGODB_DB || 'bb_store');
 }

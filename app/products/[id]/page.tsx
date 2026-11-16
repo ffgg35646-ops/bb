@@ -1,5 +1,4 @@
 import ProductDetailsLoader from '@/components/ProductDetailsLoader';
-import { getProduct } from '@/lib/products';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,16 +6,14 @@ type ProductPageProps = {
   params: Promise<{ id: string }>;
 };
 
-export async function generateMetadata({ params }: ProductPageProps) {
-  const { id } = await params;
-  const product = getProduct(id);
+export async function generateMetadata(): Promise<{ title: string; description: string }> {
   return {
-    title: product ? product.name : 'تفاصيل المنتج',
-    description: product?.shortDescription || 'تفاصيل المنتج في المتجر'
+    title: 'تفاصيل المنتج',
+    description: 'تفاصيل المنتج من كتالوج المتجر'
   };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { id } = await params;
-  return <ProductDetailsLoader id={id} initialProduct={getProduct(id) || null} />;
+  return <ProductDetailsLoader id={id} />;
 }

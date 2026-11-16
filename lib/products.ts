@@ -1,5 +1,3 @@
-import { sourceCatalogCategories, sourceCatalogProducts } from '@/lib/source-catalog';
-
 export type ProductColorMask = {
   version: 1;
   sourceColor: string;
@@ -29,7 +27,6 @@ export type Product = {
   specifications: string[];
   categoryId?: string;
   colors?: string[];
-  /** Per-color product image URLs returned by the catalogue API. */
   colorImages?: Record<string, string>;
   storageOptions?: string[];
   storagePrices?: Record<string, number>;
@@ -37,9 +34,11 @@ export type Product = {
   colorMask?: ProductColorMask;
 };
 
-export const categories = sourceCatalogCategories;
-export const products: Product[] = sourceCatalogProducts;
-export const defaultStoreProducts: Product[] = products;
+// Compatibility exports are intentionally empty. Runtime catalogue data must
+// come from MongoDB, never from bundled product/category fixtures.
+export const categories: Array<{ name: string; icon: string; description: string }> = [];
+export const products: Product[] = [];
+export const defaultStoreProducts: Product[] = [];
 
 export function formatPrice(value: number) {
   const amount = new Intl.NumberFormat('en-US', {

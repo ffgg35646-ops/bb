@@ -229,19 +229,8 @@ async function initializeDefaultCategories(db: Db) {
   await collection.createIndex({ createdAt: -1 });
 }
 
-export async function ensureDefaultCategories(db: Db) {
-  const key = initializationKey(db);
-  let pending = categoryInitialization.get(key);
-  if (!pending) {
-    pending = initializeDefaultCategories(db);
-    categoryInitialization.set(key, pending);
-  }
-  try {
-    await pending;
-  } catch (error) {
-    if (categoryInitialization.get(key) === pending) categoryInitialization.delete(key);
-    throw error;
-  }
+export async function ensureDefaultCategories(_db: Db): Promise<void> {
+  // BB categories are managed only by MongoDB/admin operations; never seed local demo data.
 }
 
 // Replace the previous demo catalogue with the supplied source catalogue.
@@ -481,19 +470,8 @@ async function initializeDefaultProducts(db: Db) {
   );
 }
 
-export async function ensureDefaultProducts(db: Db) {
-  const key = initializationKey(db);
-  let pending = productInitialization.get(key);
-  if (!pending) {
-    pending = initializeDefaultProducts(db);
-    productInitialization.set(key, pending);
-  }
-  try {
-    await pending;
-  } catch (error) {
-    if (productInitialization.get(key) === pending) productInitialization.delete(key);
-    throw error;
-  }
+export async function ensureDefaultProducts(_db: Db): Promise<void> {
+  // BB products are managed only by MongoDB/admin operations; never seed local demo data.
 }
 
 /**
