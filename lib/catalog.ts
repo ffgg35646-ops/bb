@@ -12,6 +12,14 @@ export type StoreCategory = Document & {
   deleted?: boolean;
 };
 
+// Cache the cleanup within each configured database/runtime. This is only
+// for the existing broken-image reference cleanup, not catalogue seeding.
+const blockedCatalogImageCleanup = new Map<string, Promise<void>>();
+
+function initializationKey(db: Db) {
+  return (process.env.MONGODB_URI || '') + ':' + db.databaseName;
+}
+
 export type StoredProduct = Document & {
   _id: ObjectId;
   categoryId: string;
