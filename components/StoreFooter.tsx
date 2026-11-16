@@ -82,8 +82,6 @@ export default function StoreFooter() {
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [whatsappNumber, setWhatsappNumber] = useState('201090466376');
   const [vatNumber, setVatNumber] = useState('4353454564');
-  const [barcodeImageUrl, setBarcodeImageUrl] = useState('');
-  const [barcodeRemoved, setBarcodeRemoved] = useState(false);
 
   useEffect(() => {
     let alive = true;
@@ -98,19 +96,11 @@ export default function StoreFooter() {
           if (alive && Array.isArray(data.pages)) setPages(data.pages);
         }
         if (settingsResponse.ok) {
-          const data = await settingsResponse.json() as { projectName?: string; whatsappNumber?: string; vatNumber?: string; barcodeImageUrl?: string; barcodeConfigured?: boolean; barcodeRemoved?: boolean; footerIcons?: FooterIcon[] };
+          const data = await settingsResponse.json() as { projectName?: string; whatsappNumber?: string; vatNumber?: string; footerIcons?: FooterIcon[] };
           if (alive && typeof data.projectName === 'string' && data.projectName.trim()) setProjectName(data.projectName.trim());
           if (alive && Array.isArray(data.footerIcons)) setFooterIcons(data.footerIcons);
           if (alive && typeof data.whatsappNumber === 'string') setWhatsappNumber(data.whatsappNumber);
           if (alive && typeof data.vatNumber === 'string') setVatNumber(data.vatNumber);
-          // A successful settings response may explicitly report a removed/missing barcode.
-          // Failed requests are ignored above, preserving the last working image URL.
-          if (alive && data.barcodeConfigured === true && typeof data.barcodeImageUrl === 'string' && data.barcodeImageUrl) {
-            setBarcodeImageUrl(data.barcodeImageUrl);
-          } else if (alive && data.barcodeConfigured === false) {
-            setBarcodeImageUrl('');
-          }
-          if (alive && typeof data.barcodeRemoved === 'boolean') setBarcodeRemoved(data.barcodeRemoved);
         }
       } catch {
         // Keep the fallback links working if settings cannot be loaded.
@@ -183,17 +173,8 @@ export default function StoreFooter() {
             <p>نسعد بخدمتك ومتابعة استفساراتك.</p>
           </div>
 
-          <div className="store-footer-column store-footer-barcode">
-            <h2>الباركود</h2>
-            <div className="store-footer-barcode-items">
-              {barcodeImageUrl ? (
-                <img src={barcodeImageUrl} alt="باركود المتجر" width={120} height={120} loading="lazy" />
-              ) : barcodeRemoved ? (
-                <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
-              ) : (
-                <div className="footer-demo-barcode" aria-label="مساحة الباركود الفارغة" />
-              )}
-              <div className="store-footer-icon-slots">
+          <div className="store-footer-column store-footer-icons" aria-label="روابط المتجر">
+            <div className="store-footer-icon-slots">
               {[0, 1].map((index) => {
                 const icon = footerIcons[index] || {
                   imageUrl: '',
@@ -209,19 +190,17 @@ export default function StoreFooter() {
                 return (
                   <div className="store-footer-icon-item" key={index}>
                     {imageUrl && linkUrl ? (
-                      <a className="store-footer-icon-slot is-filled" href={linkUrl} target="_blank" rel="noopener noreferrer" aria-label={label} title={label}>
+                      <a className="store-footer-icon-slot is-filled" href={linkUrl} target="_blank" rel="noopener noreferrer" aria-label={label}>
                         {slotContent}
                       </a>
                     ) : (
-                      <span className={imageUrl ? 'store-footer-icon-slot is-filled' : 'store-footer-icon-slot is-empty'} aria-label={label} title={label}>
+                      <span className={imageUrl ? 'store-footer-icon-slot is-filled' : 'store-footer-icon-slot is-empty'} aria-label={label}>
                         {slotContent}
                       </span>
                     )}
-                    <small>{label}</small>
                   </div>
                 );
               })}
-              </div>
             </div>
           </div>
         </div>
