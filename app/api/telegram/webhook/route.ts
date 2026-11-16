@@ -59,7 +59,7 @@ type FlowData = {
   orderId?: string;
   bannerId?: string;
   footerKey?: string;
-  footerSettingKey?: 'vat' | 'barcode';
+  footerSettingKey?: 'vat';
   footerIconSlot?: 'one' | 'two';
   footerIconImageUrl?: string;
   footerIconImageDataBase64?: string;
@@ -77,7 +77,7 @@ type FlowStep =
   | 'edit_product_name' | 'edit_product_colors' | 'edit_product_storage' | 'edit_product_price' | 'edit_product_details' | 'edit_product_images' | 'edit_product_color_image'
   | 'edit_product_storage_add' | 'edit_product_storage_select_edit' | 'edit_product_storage_edit_value' | 'edit_product_storage_select_delete'
   | 'contact_whatsapp' | 'cancel_reason' | 'slider_image' | 'footer_edit_text' | 'footer_confirm_save'
-  | 'footer_vat_number' | 'footer_barcode_image' | 'brand_project_name' | 'footer_icon_image' | 'footer_icon_link'
+  | 'footer_vat_number' | 'brand_project_name' | 'footer_icon_image' | 'footer_icon_link'
   | 'store_logo_image' | 'search_products';
 
 type AdminSession = {
@@ -1442,36 +1442,6 @@ async function showFooterSettings(db: Db, chatId: number) {
   );
 }
 
-async function showFooterBarcodeMenu(db: Db, chatId: number) {
-  const settings = await db.collection<{ _id: string; barcodeFileId?: string }>('store_settings')
-    .findOne({ _id: 'footer' });
-  if (settings?.barcodeFileId) {
-    try {
-      await telegramApi('sendPhoto', {
-        chat_id: chatId,
-        photo: settings.barcodeFileId,
-        caption: 'هذه صورة الباركود الحالية الظاهرة في فوتر المتجر.'
-      });
-    } catch (error) {
-      // A stale Telegram file_id must not block the admin from replacing or deleting the barcode.
-      console.warn('Footer barcode preview failed; keeping management actions available:', error instanceof Error ? error.message : 'Unknown error');
-      await sendTelegramMessage(chatId, 'تعذر عرض معاينة الباركود الحالي، لكن يمكنك استبداله أو حذفه من الخيارات التالية.');
-    }
-  } else {
-    await sendTelegramMessage(chatId, 'لم تتم إضافة صورة باركود للفوتر حتى الآن.');
-  }
-  await sendTelegramMessage(chatId, 'يمكنك استبدال الصورة بصورة جديدة أو حذفها من الفوتر:', {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: '📷 استبدال صورة الباركود', callback_data: 'footer-barcode-replace' }],
-        [{ text: '🗑 حذف صورة الباركود', callback_data: 'footer-barcode-delete' }],
-        [{ text: '↩ رجوع إلى تعديلات أخرى', callback_data: 'footer-settings-menu' }],
-        [{ text: 'القائمة الرئيسية', callback_data: 'main-menu' }]
-      ]
-    }
-  });
-}
-
 async function handleCallback(db: Db, callback: TelegramCallback) {
   const chat = callback.message?.chat;
   const chatId = chat?.id;
@@ -2780,48 +2750,6 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
     );
     await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
     await sendMainMenu(db, chatId, '✅ تم حفظ الرقم الضريبي وسيظهر أسفل اسم المتجر في الفوتر.');
-    return;
-  }
-
-  if (session.workflow === 'footer_settings' && session.step === 'footer_barcode_image') {
-    if (!message.photo?.length) {
-      await sendTelegramMessage(chatId, 'أرسل صورة الباركود كصورة في تيليجرام، وليس كرابط نصي. اكتب /cancel للإلغاء.');
-      return;
-    }
-    const photo = message.photo[message.photo.length - 1];
-    let savedImage: Awaited<ReturnType<typeof downloadSliderImage>>;
-    try {
-      savedImage = await downloadSliderImage(photo.file_id);
-    } catch (error) {
-      console.error('Footer barcode image download failed:', error instanceof Error ? error.message : 'Unknown error');
-      await sendTelegramMessage(chatId, 'تعذر حفظ صورة الباركود من تيليجرام. أعد إرسال الصورة مرة أخرى، وتأكد ألا يتجاوز حجمها 8 ميجابايت.');
-      return;
-    }
-    await db.collection<{
-      _id: string;
-      barcodeFileId?: string;
-      imageDataBase64?: string;
-      contentType?: string;
-      imageSize?: number;
-      updatedAt?: Date;
-      updatedByTelegramId?: number;
-    }>('store_settings').updateOne(
-      { _id: 'footer' },
-      {
-        $set: {
-          barcodeFileId: photo.file_id,
-          imageDataBase64: savedImage.imageDataBase64,
-          contentType: savedImage.contentType,
-          imageSize: savedImage.imageSize,
-          updatedAt: new Date(),
-          updatedByTelegramId: session.telegramUserId
-        },
-        $unset: { barcodeRemoved: '' }
-      },
-      { upsert: true }
-    );
-    await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
-    await sendMainMenu(db, chatId, '✅ تم حفظ صورة الباركود وتحديثها في الفوتر.');
     return;
   }
 
