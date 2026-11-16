@@ -1,6 +1,6 @@
 import StoreHome, { type InitialStoreCatalog } from '@/components/StoreHome';
 import { getDb } from '@/lib/mongodb';
-import { ensureDefaultProducts, listCatalogProducts, listCategories } from '@/lib/catalog';
+import { ensureDefaultProducts, listCatalogProducts, listCategories, sortStoreCategoriesBySourceOrder } from '@/lib/catalog';
 import type { StoreCategory } from '@/components/CartProvider';
 import { listStoreBanners, type StoreBanner } from '@/lib/store-banners';
 
@@ -33,10 +33,12 @@ async function loadInitialCatalog(): Promise<InitialStoreCatalog | null> {
         );
 
         try {
-          const categories = await db.collection('categories')
-            .find({ deleted: { $ne: true } })
-            .sort({ createdAt: 1, name: 1 })
-            .toArray();
+          const categories = sortStoreCategoriesBySourceOrder(
+            await db.collection('categories')
+              .find({ deleted: { $ne: true } })
+              .sort({ createdAt: 1, name: 1 })
+              .toArray()
+          );
 
           return categories
             .filter((category) => typeof category.name === 'string' && category.name.trim())
