@@ -2,7 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { ObjectId, type Db } from 'mongodb';
 import { after, NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
-import { ensureDefaultCategories, ensureDefaultProducts, type StoreCategory, type StoredProduct } from '@/lib/catalog';
+import { ensureDefaultCategories, ensureDefaultProducts, sortStoreCategoriesBySourceOrder, type StoreCategory, type StoredProduct } from '@/lib/catalog';
 import {
   adminReplyKeyboard,
   ORDER_STATUS_LABELS,
@@ -72,7 +72,7 @@ type FlowData = {
 };
 
 type FlowStep =
-  | 'section_name' | 'rename_section'
+  | 'section_name' | 'rename_section' | 'move_section_position'
   | 'product_name' | 'product_colors' | 'product_storage' | 'product_storage_price' | 'product_price' | 'product_details' | 'product_images'
   | 'edit_product_name' | 'edit_product_colors' | 'edit_product_storage' | 'edit_product_price' | 'edit_product_details' | 'edit_product_images' | 'edit_product_color_image'
   | 'edit_product_storage_add' | 'edit_product_storage_select_edit' | 'edit_product_storage_edit_value' | 'edit_product_storage_select_delete'
@@ -83,7 +83,7 @@ type FlowStep =
 type AdminSession = {
   telegramUserId: number;
   chatId: number;
-  workflow: 'add_section' | 'rename_section' | 'add_product' | 'edit_product' | 'edit_product_search' | 'contact' | 'cancel_order' | 'slider' | 'footer_content' | 'footer_settings' | 'store_logo';
+  workflow: 'add_section' | 'rename_section' | 'move_section' | 'add_product' | 'edit_product' | 'edit_product_search' | 'contact' | 'cancel_order' | 'slider' | 'footer_content' | 'footer_settings' | 'store_logo';
   step: FlowStep;
   data: FlowData;
   updatedAt: Date;
@@ -378,7 +378,8 @@ function sectionManagementKeyboard(sections: StoreCategory[]) {
       ...sections.map((section) => {
         const id = section._id.toHexString();
         return [
-          { text: '✏️ ' + section.name.slice(0, 45), callback_data: 'rename-section:' + id },
+          { text: '✏️ ' + section.name.slice(0, 35), callback_data: 'rename-section:' + id },
+          { text: '↕️ تحريك', callback_data: 'move-section:' + id },
           { text: '🗑 حذف', callback_data: 'delete-section:' + id }
         ];
       }),
@@ -389,8 +390,8 @@ function sectionManagementKeyboard(sections: StoreCategory[]) {
 
 async function listSectionsForEdit(db: Db, chatId: number) {
   await ensureDefaultProducts(db);
-  const sections = await db.collection<StoreCategory>('categories')
-    .find({ deleted: { $ne: true } }).sort({ name: 1 }).limit(80).toArray();
+  const sections = sortStoreCategoriesBySourceOrder(await db.collection<StoreCategory>('categories')
+    .find({ deleted: { $ne: true } }).limit(80).toArray());
   if (!sections.length) {
     await sendMainMenu(db, chatId, 'لا توجد أقسام لتعديلها أو حذفها.');
     return;
@@ -2025,6 +2026,16 @@ async function handleCallback(db: Db, callback: TelegramCallback) {
     }, 'القسم الحالي: ' + section.name + '\n\nاكتب الاسم الجديد فقط.');
     return;
   }
+  if (action === 'move-section') {
+    if (!isObjectId(id || '')) return void await sendTelegramMessage(chatId, 'معرّف القسم غير صالح.');
+    const section = await db.collection<StoreCategory>('categories').findOne({ _id: new ObjectId(id), deleted: { $ne: true } });
+    if (!section) return void await sendTelegramMessage(chatId, 'القسم غير موجود أو سبق حذفه.');
+    const sections = sortStoreCategoriesBySourceOrder(await db.collection<StoreCategory>('categories').find({ deleted: { $ne: true } }).toArray());
+    await startFlow(db, callback.from.id, chatId, 'move_section', 'move_section_position', {
+      categoryId: section._id.toHexString(), categoryName: section.name
+    }, 'تحريك القسم: ' + section.name + '\\n\\nالترتيب الحالي: ' + (sections.findIndex((item) => item._id.equals(section._id)) + 1) + '\\nعدد الأقسام: ' + sections.length + '\\n\\nاكتب رقم الترتيب الجديد من 1 إلى ' + sections.length + '.');
+    return;
+  }
   if (action === 'delete-section') {
     if (!isObjectId(id || '')) return void await sendTelegramMessage(chatId, 'معرّف القسم غير صالح.');
     const section = await db.collection<StoreCategory>('categories').findOne({
@@ -2999,6 +3010,39 @@ async function handleFlowMessage(db: Db, session: AdminSession, message: Telegra
     }
     return;
   }
+  if (session.workflow === 'move_section' && session.step === 'move_section_position') {
+    const categoryId = session.data.categoryId || '';
+    if (!isObjectId(categoryId)) {
+      await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+      return void await sendMainMenu(db, chatId, 'تعذر تحديد القسم المطلوب تحريكه.');
+    }
+    const normalizedPosition = value.replace(/[٠-٩]/g, (digit) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(digit)))
+      .replace(/[۰-۹]/g, (digit) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(digit)));
+    const position = Number(normalizedPosition);
+    const sections = sortStoreCategoriesBySourceOrder(await db.collection<StoreCategory>('categories')
+      .find({ deleted: { $ne: true } }).toArray());
+    if (!Number.isInteger(position) || position < 1 || position > sections.length) {
+      return void await sendTelegramMessage(chatId, 'رقم غير صالح. اكتب رقمًا من 1 إلى ' + sections.length + '.');
+    }
+    const currentIndex = sections.findIndex((section) => section._id.toHexString() === categoryId);
+    if (currentIndex < 0) {
+      await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+      return void await sendMainMenu(db, chatId, 'القسم لم يعد موجودًا ضمن الأقسام النشطة.');
+    }
+    const [movedSection] = sections.splice(currentIndex, 1);
+    sections.splice(position - 1, 0, movedSection);
+    const now = new Date();
+    await db.collection<StoreCategory>('categories').bulkWrite(sections.map((section, index) => ({
+      updateOne: {
+        filter: { _id: section._id },
+        update: { $set: { displayOrder: index + 1, updatedAt: now } }
+      }
+    })));
+    await db.collection('telegram_sessions').deleteOne({ telegramUserId: session.telegramUserId });
+    await sendMainMenu(db, chatId, '✅ تم تحريك القسم «' + movedSection.name + '» إلى الترتيب رقم ' + position + '.\nتم تحديث ترتيب العرض فقط، دون تغيير معرّفات الأقسام أو المنتجات التابعة لها.');
+    return;
+  }
+
   if (session.workflow === 'rename_section' && session.step === 'rename_section') {
     const categoryId = session.data.categoryId || '';
     if (!isObjectId(categoryId)) return void await sendTelegramMessage(chatId, 'تعذر تحديد القسم. ارجع إلى القائمة وحاول مجددًا.');
