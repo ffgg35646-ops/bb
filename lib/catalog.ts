@@ -496,9 +496,43 @@ export async function ensureDefaultProducts(db: Db) {
   }
 }
 
+/**
+ * Keep the homepage section order identical to the original Erd Al-Gwal
+ * catalogue list. In particular, iPhone 18 Pro Max is first, iPhone 18 Pro
+ * second, and iPhone 18 Duo third. Imported categories not in the source list
+ * remain visible after the known categories, in their saved creation order.
+ */
+export function sortStoreCategoriesBySourceOrder<T extends { name: string; createdAt?: Date | string }>(items: T[]): T[] {
+  const sourceOrder = new Map<string, number>(
+    seedCategories.map((category, index) => [category.name, index])
+  );
+
+  const timestamp = (value: Date | string | undefined) => {
+    if (!value) return 0;
+    const parsed = value instanceof Date ? value.getTime() : new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  return [...items].sort((left, right) => {
+    const leftOrder = sourceOrder.get(left.name);
+    const rightOrder = sourceOrder.get(right.name);
+
+    if (leftOrder !== undefined && rightOrder !== undefined) return leftOrder - rightOrder;
+    if (leftOrder !== undefined) return -1;
+    if (rightOrder !== undefined) return 1;
+
+    return timestamp(left.createdAt) - timestamp(right.createdAt)
+      || left.name.localeCompare(right.name, 'ar');
+  });
+}
+
 export async function listCategories(db: Db) {
   await ensureDefaultCategories(db);
-  return db.collection<StoreCategory>('categories').find({ deleted: { $ne: true } }).sort({ createdAt: 1, name: 1 }).toArray();
+  const categories = await db.collection<StoreCategory>('categories')
+    .find({ deleted: { $ne: true } })
+    .sort({ createdAt: 1, name: 1 })
+    .toArray();
+  return sortStoreCategoriesBySourceOrder(categories);
 }
 
 const REMOVED_CATALOG_IMAGE_NAME = 'GjaaIMG_fbc54b6d-bf6a-49e0-83c1-8c3551b1036c.png';
