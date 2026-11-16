@@ -102,14 +102,20 @@ export default function StoreHome({
   const { catalogProducts, catalogCategories, catalogStatus } = useCart();
   // Prefer the fresh server-rendered MongoDB snapshot on the first paint.
   // Once the background request finishes, the live provider data takes over.
+  // Use the server snapshot only while the live MongoDB request is pending.
+  // Once the request fails, clear the snapshot instead of showing stale catalog data.
   const products = catalogStatus === 'ready'
     ? catalogProducts
-    : initialCatalog?.products ?? catalogProducts;
+    : catalogStatus === 'loading'
+      ? initialCatalog?.products ?? []
+      : [];
   const categories = catalogStatus === 'ready'
     ? catalogCategories
-    : initialCatalog?.categories ?? catalogCategories;
+    : catalogStatus === 'loading'
+      ? initialCatalog?.categories ?? []
+      : [];
   const isCatalogLoading = catalogStatus === 'loading' && !initialCatalog;
-  const hasCatalogError = catalogStatus === 'error' && !initialCatalog;
+  const hasCatalogError = catalogStatus === 'error';
   const [search, setSearch] = useState('');
 
   useEffect(() => {

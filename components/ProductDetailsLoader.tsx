@@ -3,81 +3,89 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import ProductDetails from '@/components/ProductDetails';
-import { useCart } from '@/components/CartProvider';
 import type { Product } from '@/lib/products';
 
-export default function ProductDetailsLoader({
-  id,
-  initialProduct
-}: {
-  id: string;
-  initialProduct: Product | null;
-}) {
-  const { catalogProducts } = useCart();
-  const cachedProduct = catalogProducts.find((item) => item.id === id) || null;
-  const [product, setProduct] = useState<Product | null>(initialProduct || cachedProduct);
-  const [notFound, setNotFound] = useState(false);
-  const [detailLoadedFor, setDetailLoadedFor] = useState('');
+type LoadStatus = 'loading' | 'ready' | 'not-found' | 'unavailable';
 
-  useEffect(() => {
-    if (!cachedProduct || detailLoadedFor === id) return;
-
-    // The catalogue cache is intentionally compact and may not contain the
-    // colour mask. Never let it overwrite a detailed product already loaded
-    // from the single-product API.
-    setProduct((current) => (
-      current?.id === id && current.colorMask && !cachedProduct.colorMask
-        ? current
-        : cachedProduct
-    ));
-    setNotFound(false);
-  }, [cachedProduct, detailLoadedFor, id]);
+export default function ProductDetailsLoader({ id }: { id: string }) {
+  const [product, setProduct] = useState<Product | null>(null);
+  const [status, setStatus] = useState<LoadStatus>('loading');
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     const controller = new AbortController();
 
-    // Refresh the product in the background. Keep the catalogue version visible
-    // while MongoDB responds, then retain the full product including its colour mask.
+    setProduct(null);
+    setStatus('loading');
+
     void fetch('/api/products/' + encodeURIComponent(id), {
       cache: 'no-store',
       signal: controller.signal
     }).then(async (response) => {
+      if (cancelled) return;
+
       if (response.status === 404) {
-        if (!cancelled) {
-          setProduct(null);
-          setNotFound(true);
-          setDetailLoadedFor(id);
-        }
+        setProduct(null);
+        setStatus('not-found');
         return;
       }
-      if (!response.ok) return;
+
+      if (!response.ok) {
+        setProduct(null);
+        setStatus('unavailable');
+        return;
+      }
 
       const payload = await response.json() as { product?: Product };
-      if (!cancelled && payload.product) {
-        setProduct(payload.product);
-        setNotFound(false);
-        setDetailLoadedFor(id);
+      if (!payload.product) {
+        setProduct(null);
+        setStatus('unavailable');
+        return;
       }
+
+      setProduct(payload.product);
+      setStatus('ready');
     }).catch(() => {
-      // Keep the already visible product when background refresh is unavailable.
+      if (!cancelled) {
+        setProduct(null);
+        setStatus('unavailable');
+      }
     });
 
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [id]);
+  }, [id, retryKey]);
 
-  if (product) return <ProductDetails product={product} />;
-  if (!notFound) return null;
+  if (status === 'ready' && product) return <ProductDetails product={product} />;
 
   return (
     <main className="container product-detail-page">
       <section className="product-detail-card" style={{ padding: 32, textAlign: 'center' }}>
-        <h1>المنتج غير متاح حاليًا</h1>
-        <p>ربما تم حذف المنتج من المتجر.</p>
-        <Link href="/#categories" className="primary-button">العودة إلى المنتجات</Link>
+        {status === 'loading' ? (
+          <>
+            <h1>جارٍ تحميل المنتج</h1>
+            <p>يتم جلب بيانات المنتج من قاعدة البيانات.</p>
+          </>
+        ) : status === 'not-found' ? (
+          <>
+            <h1>المنتج غير متاح حاليًا</h1>
+            <p>لم يتم العثور على هذا المنتج في قاعدة البيانات.</p>
+          </>
+        ) : (
+          <>
+            <h1>تعذر تحميل المنتج</h1>
+            <p>تعذر الاتصال بقاعدة البيانات. لم نعرض بيانات تجريبية أو محفوظة محليًا.</p>
+            <button type="button" className="primary-button" onClick={() => setRetryKey((value) => value + 1)}>
+              إعادة المحاولة
+            </button>
+          </>
+        )}
+        <div style={{ marginTop: 16 }}>
+          <Link href="/#categories" className="primary-button">العودة إلى المنتجات</Link>
+        </div>
       </section>
     </main>
   );
