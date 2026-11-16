@@ -504,7 +504,7 @@ export async function ensureDefaultProducts(db: Db) {
  */
 export function sortStoreCategoriesBySourceOrder<T extends { name: string; createdAt?: Date | string }>(items: T[]): T[] {
   const sourceOrder = new Map<string, number>(
-    seedCategories.map((category, index) => [category.name, index])
+    seedCategories.map((category, index) => [category.name, index] as const)
   );
 
   const timestamp = (value: Date | string | undefined) => {
