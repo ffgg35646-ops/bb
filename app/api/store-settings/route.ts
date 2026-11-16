@@ -61,7 +61,6 @@ export async function GET() {
   } catch (error) {
     console.error('Store settings read failed:', error instanceof Error ? error.message : 'Unknown error');
     // Do not turn a temporary database failure into a successful empty settings payload.
-    // The footer keeps its last known barcode until a later request succeeds.
     return NextResponse.json({ error: 'Store settings are temporarily unavailable' }, { status: 503, headers });
   }
 }
