@@ -47,6 +47,11 @@ function getClientPromise(): Promise<MongoClient> {
 }
 
 export async function getDb(): Promise<Db> {
+  const configuredDatabase = process.env.MONGODB_DB?.trim();
+  if (configuredDatabase && configuredDatabase !== 'bb_store') {
+    throw new Error('MONGODB_DB must be "bb_store" for the BB project');
+  }
+
   const client = await getClientPromise();
-  return client.db(process.env.MONGODB_DB || 'bb_store');
+  return client.db('bb_store');
 }
