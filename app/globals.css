@@ -1529,10 +1529,8 @@ body { background: #fff; color: #1d1d1f; font-family: -apple-system, BlinkMacSys
   .store-page-modal time { padding: 0 18px 15px; }
 }
 
-/* Additional footer details: VAT, editable barcode and trust markers */
+/* Additional footer details: editable barcode and trust markers */
 .store-footer-inner { grid-template-columns: minmax(1.2fr, 1.35fr) repeat(4, minmax(0, 1fr)); }
-.store-footer-vat { margin: 0 !important; color: #59656d !important; font-size: 11px !important; font-weight: 800; line-height: 1.8; }
-.store-footer-vat bdi { font-variant-numeric: tabular-nums; letter-spacing: .04em; }
 .store-footer-barcode img { display: block; width: 132px; height: 132px; max-width: 100%; object-fit: contain; padding: 7px; border: 1px solid #dfe4e7; border-radius: 12px; background: #fff; }
 .store-footer-trust { display: flex; justify-content: center; align-items: center; gap: clamp(18px, 4vw, 58px); margin-top: 34px; padding-top: 22px; border-top: 1px solid #d9dee2; }
 .store-footer-trust-item { display: inline-flex; align-items: center; gap: 9px; color: #4a565e; font-size: 12px; }
@@ -6075,15 +6073,14 @@ body.erd-verify-waiting-screen .erd-wait-main {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 5px;
-  min-width: 58px;
+  min-width: 80px;
 }
 .store-footer-icon-slot {
   box-sizing: border-box;
   display: inline-flex;
-  width: 58px;
-  height: 58px;
-  flex: 0 0 58px;
+  width: 80px;
+  height: 80px;
+  flex: 0 0 80px;
   align-items: center;
   justify-content: center;
   overflow: hidden;
@@ -6112,19 +6109,12 @@ body.erd-verify-waiting-screen .erd-wait-main {
   font-weight: 300;
   line-height: 1;
 }
-.store-footer-icon-item small {
-  max-width: 76px;
-  color: inherit;
-  font-size: 10px;
-  line-height: 1.4;
-  text-align: center;
-}
 @media (max-width: 480px) {
   .store-footer-barcode-items { gap: 9px; }
   .store-footer-icon-slot {
-    width: 52px;
-    height: 52px;
-    flex-basis: 52px;
+    width: 66px;
+    height: 66px;
+    flex-basis: 66px;
   }
-  .store-footer-icon-item { min-width: 52px; }
+  .store-footer-icon-item { min-width: 66px; }
 }

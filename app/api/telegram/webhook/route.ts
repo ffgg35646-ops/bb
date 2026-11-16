@@ -1413,24 +1413,23 @@ async function showStoreLogoMenu(db: Db, chatId: number) {
 
 async function showFooterSettings(db: Db, chatId: number) {
   const [settings, brand, reviewCount] = await Promise.all([
-    db.collection<{ _id: string; vatNumber?: string; vatNumberRemoved?: boolean; barcodeFileId?: string; barcodeRemoved?: boolean; iconOneImageUrl?: string; iconTwoImageUrl?: string; iconOneImageDataBase64?: string; iconTwoImageDataBase64?: string }>('store_settings')
+    db.collection<{ _id: string; barcodeFileId?: string; barcodeRemoved?: boolean; iconOneImageUrl?: string; iconTwoImageUrl?: string; iconOneImageDataBase64?: string; iconTwoImageDataBase64?: string }>('store_settings')
       .findOne({ _id: 'footer' }),
     db.collection<{ _id: string; projectName?: string }>('store_settings').findOne({ _id: 'brand' }),
     db.collection('customer_reviews').countDocuments({})
   ]);
-  const vatNumber = settings?.vatNumberRemoved ? 'محذوف' : settings?.vatNumber || '4353454564';
   const projectName = typeof brand?.projectName === 'string' && brand.projectName.trim() ? brand.projectName.trim() : 'أرض الجوال';
   const barcodeStatus = settings?.barcodeFileId ? 'تمت إضافته' : settings?.barcodeRemoved ? 'محذوف' : 'باركود تصميمي مؤقت ظاهر في المتجر';
   const iconOneStatus = settings?.iconOneImageUrl || settings?.iconOneImageDataBase64 ? 'مضافة' : 'غير مضافة';
   const iconTwoStatus = settings?.iconTwoImageUrl || settings?.iconTwoImageDataBase64 ? 'مضافة' : 'غير مضافة';
   await sendTelegramMessage(chatId,
-    'تعديلات أخرى — إعدادات المتجر والفوتر\n\nاسم المشروع: ' + projectName + '\nالرقم الضريبي: ' + vatNumber + '\nالباركود: ' + barcodeStatus + '\nالأيقونة الأولى: ' + iconOneStatus + '\nالأيقونة الثانية: ' + iconTwoStatus + '\n\nاختر العنصر الذي تريد تعديله:',
+    'تعديلات أخرى — إعدادات المتجر والفوتر\n\nاسم المشروع: ' + projectName + '\nالباركود: ' + barcodeStatus + '\nالأيقونة الأولى: ' + iconOneStatus + '\nالأيقونة الثانية: ' + iconTwoStatus + '\n\nاختر العنصر الذي تريد تعديله:',
     {
       reply_markup: {
         inline_keyboard: [
           [{ text: 'اسم المشروع', callback_data: 'footer-setting:project-name' }],
           [{ text: 'الأيقونة الأولى', callback_data: 'footer-setting:icon-one' }, { text: 'الأيقونة الثانية', callback_data: 'footer-setting:icon-two' }],
-          [{ text: 'الرقم الضريبي', callback_data: 'footer-setting:vat' }, { text: 'الباركود', callback_data: 'footer-setting:barcode' }],
+          [{ text: 'الباركود', callback_data: 'footer-setting:barcode' }],
           [{ text: '🖼️ تعديل الشعار', callback_data: 'footer-setting:logo' }, { text: '🖼️ السلايدر', callback_data: 'footer-setting:slider' }],
           [{ text: 'السياسات', callback_data: 'footer-setting:policies' }, { text: 'خدمات العملاء', callback_data: 'footer-setting:customer-service' }],
           [{ text: '📞 الاتصال', callback_data: 'footer-setting:contact' }],
