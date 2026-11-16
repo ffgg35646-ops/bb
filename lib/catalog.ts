@@ -10,6 +10,7 @@ export type StoreCategory = Document & {
   createdAt: Date;
   updatedAt: Date;
   deleted?: boolean;
+  displayOrder?: number;
 };
 
 // Cache the cleanup within each configured database/runtime. This is only
@@ -76,7 +77,7 @@ const SOURCE_CATEGORY_ORDER = [
   'سامسونج S24'
 ] as const;
 
-export function sortStoreCategoriesBySourceOrder<T extends { name: string; createdAt?: Date | string }>(items: T[]): T[] {
+export function sortStoreCategoriesBySourceOrder<T extends { name: string; createdAt?: Date | string; displayOrder?: number }>(items: T[]): T[] {
   const sourceOrder = new Map<string, number>(
     SOURCE_CATEGORY_ORDER.map((name, index) => [name, index] as const)
   );
@@ -88,6 +89,17 @@ export function sortStoreCategoriesBySourceOrder<T extends { name: string; creat
   };
 
   return [...items].sort((left, right) => {
+    const leftManual = Number.isFinite(left.displayOrder) ? left.displayOrder : undefined;
+    const rightManual = Number.isFinite(right.displayOrder) ? right.displayOrder : undefined;
+
+    // Once an administrator assigns positions, those saved positions take
+    // precedence over the legacy source ordering.
+    if (leftManual !== undefined && rightManual !== undefined) {
+      return leftManual - rightManual || left.name.localeCompare(right.name, 'ar');
+    }
+    if (leftManual !== undefined) return -1;
+    if (rightManual !== undefined) return 1;
+
     const leftOrder = sourceOrder.get(left.name);
     const rightOrder = sourceOrder.get(right.name);
 
