@@ -396,7 +396,7 @@ async function listSectionsForEdit(db: Db, chatId: number) {
     await sendMainMenu(db, chatId, 'لا توجد أقسام لتعديلها أو حذفها.');
     return;
   }
-  await sendTelegramMessage(chatId, 'اختر القسم لتعديل اسمه أو حذفه:', {
+  await sendTelegramMessage(chatId, 'اختر القسم لتعديل اسمه أو تحريكه أو حذفه:', {
     reply_markup: sectionManagementKeyboard(sections)
   });
 }
@@ -2033,7 +2033,7 @@ async function handleCallback(db: Db, callback: TelegramCallback) {
     const sections = sortStoreCategoriesBySourceOrder(await db.collection<StoreCategory>('categories').find({ deleted: { $ne: true } }).toArray());
     await startFlow(db, callback.from.id, chatId, 'move_section', 'move_section_position', {
       categoryId: section._id.toHexString(), categoryName: section.name
-    }, 'تحريك القسم: ' + section.name + '\\n\\nالترتيب الحالي: ' + (sections.findIndex((item) => item._id.equals(section._id)) + 1) + '\\nعدد الأقسام: ' + sections.length + '\\n\\nاكتب رقم الترتيب الجديد من 1 إلى ' + sections.length + '.');
+    }, 'تحريك القسم: ' + section.name + '\n\nالترتيب الحالي: ' + (sections.findIndex((item) => item._id.equals(section._id)) + 1) + '\nعدد الأقسام: ' + sections.length + '\n\nاكتب رقم الترتيب الجديد من 1 إلى ' + sections.length + '.');
     return;
   }
   if (action === 'delete-section') {
