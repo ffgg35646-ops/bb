@@ -253,13 +253,22 @@ export function serializeStoredProduct(product: StoredProduct, options: { includ
           : `/api/products/${id}/image?color=${encodeURIComponent(color)}&v=${colorImageVersion}`
       ] as const)
   );
+  // Match the product-details page's initial color selection so the homepage
+  // card uses the same variant image that customers see when opening the item.
+  const normalizeColor = (value: string) => value.trim().normalize('NFKC').replace(/\\s+/g, ' ');
+  const defaultColor = normalizeColor(product.colorMask?.sourceColor || product.colors?.[0] || '');
+  const defaultColorImage = defaultColor
+    ? colorImages[defaultColor] || Object.entries(colorImages).find(
+        ([color]) => normalizeColor(color) === defaultColor
+      )?.[1] || ''
+    : '';
   return {
     id: product.seedId || id,
     name: product.name,
     category: product.category,
     categoryId: product.categoryId,
     price: product.price,
-    image: displayImages[0] || '',
+    image: defaultColorImage || displayImages[0] || '',
     images: displayImages,
     ...(product.oldPrice !== undefined ? { oldPrice: product.oldPrice } : {}),
     ...(product.badge ? { badge: product.badge } : {}),
