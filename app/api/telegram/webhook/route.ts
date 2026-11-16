@@ -1421,7 +1421,6 @@ async function showFooterSettings(db: Db, chatId: number) {
   ]);
   const vatNumber = settings?.vatNumberRemoved ? 'محذوف' : settings?.vatNumber || '4353454564';
   const projectName = typeof brand?.projectName === 'string' && brand.projectName.trim() ? brand.projectName.trim() : 'أرض الجوال';
-  const barcodeStatus = settings?.barcodeFileId ? 'تمت إضافته' : settings?.barcodeRemoved ? 'محذوف' : 'باركود تصميمي مؤقت ظاهر في المتجر';
   const iconOneStatus = settings?.iconOneImageUrl || settings?.iconOneImageDataBase64 ? 'مضافة' : 'غير مضافة';
   const iconTwoStatus = settings?.iconTwoImageUrl || settings?.iconTwoImageDataBase64 ? 'مضافة' : 'غير مضافة';
   await sendTelegramMessage(chatId,
@@ -1431,7 +1430,7 @@ async function showFooterSettings(db: Db, chatId: number) {
         inline_keyboard: [
           [{ text: 'اسم المشروع', callback_data: 'footer-setting:project-name' }],
           [{ text: 'الأيقونة الأولى', callback_data: 'footer-setting:icon-one' }, { text: 'الأيقونة الثانية', callback_data: 'footer-setting:icon-two' }],
-          [{ text: 'الرقم الضريبي', callback_data: 'footer-setting:vat' }, { text: 'الباركود', callback_data: 'footer-setting:barcode' }],
+          [{ text: 'الرقم الضريبي', callback_data: 'footer-setting:vat' }],
           [{ text: '🖼️ تعديل الشعار', callback_data: 'footer-setting:logo' }, { text: '🖼️ السلايدر', callback_data: 'footer-setting:slider' }],
           [{ text: 'السياسات', callback_data: 'footer-setting:policies' }, { text: 'خدمات العملاء', callback_data: 'footer-setting:customer-service' }],
           [{ text: '📞 الاتصال', callback_data: 'footer-setting:contact' }],
@@ -1801,10 +1800,6 @@ async function handleCallback(db: Db, callback: TelegramCallback) {
     );
     return;
   }
-  if (action === 'footer-setting' && id === 'barcode') {
-    await showFooterBarcodeMenu(db, chatId);
-    return;
-  }
   if (action === 'footer-setting' && id === 'reviews') {
     await db.collection('telegram_sessions').deleteOne({ telegramUserId: callback.from.id });
     await showReviewPage(db, chatId, 0);
@@ -1879,32 +1874,6 @@ async function handleCallback(db: Db, callback: TelegramCallback) {
       {},
       'الاتصال والدعم\n\nأرسل رقم الواتسا الجديد.'
     );
-    return;
-  }
-  if (action === 'footer-barcode-replace') {
-    // Do not resend the old Telegram photo here: expired file_ids can fail
-    // and prevent the upload session from starting. The admin can send the new
-    // photo directly; the existing barcode stays saved until that upload succeeds.
-    await startFlow(
-      db,
-      callback.from.id,
-      chatId,
-      'footer_settings',
-      'footer_barcode_image',
-      { footerSettingKey: 'barcode' },
-      'أرسل صورة الباركود الجديدة مباشرة لاستبدال الحالية. ستظل الصورة الحالية محفوظة حتى نجاح رفع البديلة. اكتب /cancel للإلغاء.'
-    );
-    return;
-  }
-  if (action === 'footer-barcode-delete') {
-    const result = await db.collection<{ _id: string; barcodeFileId?: string; updatedAt?: Date; updatedByTelegramId?: number }>('store_settings').updateOne(
-      { _id: 'footer' },
-      { $unset: { barcodeFileId: '' }, $set: { barcodeRemoved: true, updatedAt: new Date(), updatedByTelegramId: callback.from.id } }
-    );
-    await sendTelegramMessage(chatId,
-      result.modifiedCount ? '✅ تم حذف الباركود .' : 'لا يوجد باركود محفوظ لحذفه.'
-    );
-    await showFooterSettings(db, chatId);
     return;
   }
   if (action === 'footer-page' && id && FOOTER_PAGE_DEFINITIONS[id]) {
