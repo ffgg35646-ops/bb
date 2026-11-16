@@ -490,6 +490,20 @@ function AutoProductSlider({ categoryName, products }: { categoryName: string; p
 function StripProductCard({ product }: { product: Product }) {
   const { addToCart } = useCart();
   const [added, setAdded] = useState(false);
+  // Try every saved product image, then colour-specific images, instead of
+  // leaving the homepage card blank when its first Telegram file is stale.
+  const imageCandidates = Array.from(new Set([
+    product.image,
+    ...(product.images || []),
+    ...Object.values(product.colorImages || {})
+  ].filter((image): image is string => typeof image === 'string' && image.trim().length > 0)));
+  const imageCandidatesKey = imageCandidates.join('|');
+  const [imageIndex, setImageIndex] = useState(0);
+
+  useEffect(() => {
+    setImageIndex(0);
+  }, [product.id, imageCandidatesKey]);
+
   const availableProductColors = Array.from(new Set((product.colors || [])
     .filter((color) => typeof color === 'string' && color.trim())
     .map(normalizeProductColorName)));
@@ -504,12 +518,11 @@ function StripProductCard({ product }: { product: Product }) {
     <article className="strip-product-card">
       <Link href={'/products/' + product.id} className="strip-product-image" aria-label={'تفاصيل ' + product.name}>
         <img
-          src={product.image}
+          src={imageCandidates[imageIndex] || '/product-image-placeholder.svg'}
           alt={product.name}
           loading="lazy"
-          onError={(event) => {
-            event.currentTarget.onerror = null;
-            event.currentTarget.src = '/product-image-placeholder.svg';
+          onError={() => {
+            setImageIndex((current) => Math.min(current + 1, imageCandidates.length));
           }}
         />
         {product.badge ? <span className="strip-product-badge">{product.badge}</span> : null}
