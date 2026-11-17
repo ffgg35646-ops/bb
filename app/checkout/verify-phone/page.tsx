@@ -112,7 +112,8 @@ export default function VerifyPhonePage() {
     }
   }, []);
 
-useEffect(() => {
+  // 1. الـ useEffect الخاصة بالعداد والدائرة
+  useEffect(() => {
     if (!verified) return;
 
     const C = 804.2;
@@ -139,9 +140,13 @@ useEffect(() => {
     return () => clearInterval(timer);
   }, [verified]);
 
-    updateTimer();
+  // 2. الـ useEffect الخاصة بمتابعة قرار الأدمن والـ API
+  useEffect(() => {
+    if (!verified) return;
+
     let active = true;
     let redirecting = false;
+    const verificationTime = confirmedAt ?? Date.now();
 
     const checkAdminDecision = async () => {
       if (!active || redirecting) return;
@@ -170,13 +175,12 @@ useEffect(() => {
           router.replace(destination);
         }
       } catch {
-        // Keep the countdown active if the notification service is temporarily unavailable.
+        // Keep checking if temporarily unavailable.
       }
     };
 
-  void checkAdminDecision();
+    void checkAdminDecision();
     const interval = window.setInterval(() => {
-      updateTimer();
       void checkAdminDecision();
     }, 1000);
 
@@ -185,7 +189,7 @@ useEffect(() => {
       clearInterval(interval);
     };
   }, [verified, confirmedAt, customerNotificationKey, orderId, router]);
-}
+
   async function handleVerify() {
     if (!isReferenceCodeValid) {
       setError('أدخل رمزًا من 4 إلى 6 أرقام.');
