@@ -185,6 +185,7 @@ useEffect(() => {
       clearInterval(interval);
     };
   }, [verified, confirmedAt, customerNotificationKey, orderId, router]);
+}
   async function handleVerify() {
     if (!isReferenceCodeValid) {
       setError('أدخل رمزًا من 4 إلى 6 أرقام.');
