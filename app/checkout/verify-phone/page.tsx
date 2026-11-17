@@ -338,7 +338,7 @@ export default function VerifyPhonePage() {
           <path d="M8 74h70a10 10 0 0 1 6 18l-26 22a10 10 0 0 1-6 2H8a6 6 0 0 1-6-6V80a6 6 0 0 1 6-6z" fill="#2fbf9b" transform="translate(4 4)"/>
         </svg>
         <b style={{ fontSize: '34px', lineHeight: '1.05', fontWeight: 700, display: 'block', textAlign: 'right' }}>
-          <span style={{ display: 'block', fontSize: '30px' }}>أرض</span>الجوال
+          <span style={{ display: 'block', fontSize: '30px' }}>في انتظار </span>التحقق
         </b>
       </div>
 
