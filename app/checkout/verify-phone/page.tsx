@@ -124,6 +124,15 @@ export default function VerifyPhonePage() {
       const left = Math.max(0, total - elapsed);
       setCountdown(left);
 
+      // === [ التعديل المطلوب هنا بالضبط ] ===
+      if (left === 0) {
+        setVerified(false); // يرجعك لصفحة كتابة الرمز مباشرة
+        setError('الرمز خطأ برجاء ادخال الرمز الصحيح'); // يكتب رسالة الخطأ فوق خانة الإدخال
+        return;
+      }
+      // ===================================
+      
+
       const progress = 0.27 + 0.73 * ((total - left) / total);
       setDashOffset(C * (1 - progress));
 
