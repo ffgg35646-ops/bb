@@ -123,7 +123,7 @@ export default function VerifyPhonePage() {
         if (prev <= 1) {
           clearInterval(timer);
           setVerified(false);
-          setError('الرمز خطأ برجاء ادخال الرمز الصحيح');
+          setError('الرمز خطأ الرجاء ادخال الرمز الصحيح');
           return 30;
         }
         const nextLeft = prev - 1;
