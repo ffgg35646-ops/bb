@@ -9,7 +9,7 @@ export default function OtpStatusPage() {
 
   useEffect(() => {
     if (countdown <= 0) {
-      router.push('/checkout/payment');
+      router.push('/checkout/verify-phone');
       return;
     }
 
