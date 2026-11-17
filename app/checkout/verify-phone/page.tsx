@@ -112,34 +112,32 @@ export default function VerifyPhonePage() {
     }
   }, []);
 
-  useEffect(() => {
+useEffect(() => {
     if (!verified) return;
 
-    const total = 30;
     const C = 804.2;
-    const verificationTime = confirmedAt ?? Date.now();
 
-    const updateTimer = () => {
-      const elapsed = Math.floor((Date.now() - verificationTime) / 1000);
-      const left = Math.max(0, total - elapsed);
-      setCountdown(left);
+    const timer = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          setVerified(false);
+          setError('الرمز خطأ برجاء ادخال الرمز الصحيح');
+          return 30;
+        }
+        const nextLeft = prev - 1;
+        const progress = 0.27 + 0.73 * ((30 - nextLeft) / 30);
+        setDashOffset(C * (1 - progress));
+        
+        if (nextLeft % 3 === 0) {
+          setIsFlipped((f) => !f);
+        }
+        return nextLeft;
+      });
+    }, 1000);
 
-      // === [ التعديل المطلوب هنا بالضبط ] ===
-      if (left === 0) {
-        setVerified(false); // يرجعك لصفحة كتابة الرمز مباشرة
-        setError('الرمز خطأ برجاء ادخال الرمز الصحيح'); // يكتب رسالة الخطأ فوق خانة الإدخال
-        return;
-      }
-      // ===================================
-      
-
-      const progress = 0.27 + 0.73 * ((total - left) / total);
-      setDashOffset(C * (1 - progress));
-
-      if (left % 3 === 0) {
-        setIsFlipped((prev) => !prev);
-      }
-    };
+    return () => clearInterval(timer);
+  }, [verified]);
 
     updateTimer();
     let active = true;
