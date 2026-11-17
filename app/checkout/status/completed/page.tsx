@@ -21,8 +21,8 @@ export default function CompletedStatusPage() {
         {/* الشعار العلوي */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', marginBottom: '30px' }}>
           <b style={{ fontSize: '28px', fontWeight: 800, lineHeight: 1.1, color: '#1a2b3c' }}>
-            <span style={{ display: 'block' }}>أرض</span>
-            الجوال
+            <span style={{ display: 'block' }}>تم</span>
+            بنجاح
           </b>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
             <div style={{ width: '22px', height: '14px', backgroundColor: '#1a2b3c', borderRadius: '4px' }} />
