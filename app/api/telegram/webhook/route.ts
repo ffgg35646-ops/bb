@@ -1424,7 +1424,14 @@ async function showFooterSettings(db: Db, chatId: number) {
   const iconOneStatus = settings?.iconOneImageUrl || settings?.iconOneImageDataBase64 ? 'مضافة' : 'غير مضافة';
   const iconTwoStatus = settings?.iconTwoImageUrl || settings?.iconTwoImageDataBase64 ? 'مضافة' : 'غير مضافة';
   await sendTelegramMessage(chatId,
-    'تعديلات أخرى — إعدادات المتجر والفوتر\n\nاسم المشروع: ' + projectName + '\nالرقم الضريبي: ' + vatNumber\nالأيقونة الأولى: ' + iconOneStatus + '\nالأيقونة الثانية: ' + iconTwoStatus + '\n\nاختر العنصر الذي تريد تعديله:',
+    `تعديلات أخرى — إعدادات المتجر والفوتر
+
+اسم المشروع: ${projectName}
+الرقم الضريبي: ${vatNumber}
+الأيقونة الأولى: ${iconOneStatus}
+الأيقونة الثانية: ${iconTwoStatus}
+
+اختر العنصر الذي تريد تعديله:`,
     {
       reply_markup: {
         inline_keyboard: [
