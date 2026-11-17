@@ -382,7 +382,7 @@ export default function VerifyPhonePage() {
           <i style={{ flex: 1, height: '1px', background: '#dfe4e8', fontStyle: 'normal' }} />
         </div>
         <p style={{ fontSize: '21px', lineHeight: '1.8', color: '#5d6672', margin: 0, maxWidth: '380px' }}>
-          يرجى الانتظار وعدم اغلاق هذه الصفحة حتى اكتمال العملية
+            يرجى الانتظار وعدم اغلاق هذه الصفحة حتى اكتمال العملية
         </p>
       </div>
 
