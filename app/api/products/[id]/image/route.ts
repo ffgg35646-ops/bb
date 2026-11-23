@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getDb } from '@/lib/mongodb';
 import { findStoredProduct, isBlockedCatalogImage } from '@/lib/catalog';
 import { telegramApi } from '@/lib/telegram';
+import { fetchRemoteImage } from '@/lib/remote-image';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -11,8 +12,10 @@ type TelegramFile = { file_path?: string };
 export async function GET(request: NextRequest, context: { params: Promise<{ id: string }> }) {
   const { id } = await context.params;
   const color = request.nextUrl.searchParams.get('color');
+  const source = request.nextUrl.searchParams.get('source');
   const index = Number(request.nextUrl.searchParams.get('index') || '0');
-  if (color === null && (!Number.isInteger(index) || index < 0 || index > 10)) {
+  if (source !== null && source !== 'cover') return NextResponse.json({ error: 'Invalid image source' }, { status: 400 });
+  if (source !== 'cover' && color === null && (!Number.isInteger(index) || index < 0 || index > 10)) {
     return NextResponse.json({ error: 'Invalid image index' }, { status: 400 });
   }
   if (color !== null && (!color.trim() || color.length > 80)) {
@@ -25,7 +28,8 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
   try {
     const db = await getDb();
     const product = await findStoredProduct(db, id);
-    const imageValue = color !== null ? product?.colorImages?.[color] : product?.images?.[index];
+    if (!product) return new NextResponse('Product not found', { status: 404 });
+    const imageValue = source === 'cover' ? product.imageUrl : color !== null ? product.colorImages?.[color] : product.images?.[index];
     if (!imageValue || isBlockedCatalogImage(imageValue)) {
       return new NextResponse('Image not found', { status: 404 });
     }
@@ -35,9 +39,7 @@ export async function GET(request: NextRequest, context: { params: Promise<{ id:
     try {
       const imageUrl = new URL(imageValue);
       if ((imageUrl.protocol === 'https:' || imageUrl.protocol === 'http:') && !imageUrl.username && !imageUrl.password) {
-        const response = NextResponse.redirect(imageUrl, 302);
-        response.headers.set('cache-control', 'public, max-age=3600, stale-while-revalidate=86400');
-        return response;
+        return fetchRemoteImage(imageUrl.toString());
       }
     } catch {
       // A non-URL value is treated as a Telegram file ID below.
