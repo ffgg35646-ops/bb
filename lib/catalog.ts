@@ -253,7 +253,7 @@ export function serializeStoredProduct(product: StoredProduct, options: { includ
       .map(([color, image]) => [
         color,
         isHttpImageUrl(image)
-          ? image
+          ? `/api/products/${id}/image?color=${encodeURIComponent(color)}&v=${colorImageVersion}`
           : `/api/products/${id}/image?color=${encodeURIComponent(color)}&v=${colorImageVersion}`
       ] as const)
   );
