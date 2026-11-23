@@ -238,9 +238,13 @@ export function serializeStoredProduct(product: StoredProduct, options: { includ
   const storedImageUrls = images.flatMap((image, index) => (
     isBlockedCatalogImage(image)
       ? []
-      : [isHttpImageUrl(image) ? image : `/api/products/${id}/image?index=${index}`]
+      : [`/api/products/${id}/image?index=${index}`]
   ));
-  const fallbackImage = isBlockedCatalogImage(product.imageUrl) ? '' : product.imageUrl || '';
+  const fallbackImage = isBlockedCatalogImage(product.imageUrl)
+    ? ''
+    : isHttpImageUrl(product.imageUrl)
+      ? `/api/products/${id}/image?source=cover&v=${colorImageVersion}`
+      : product.imageUrl || '';
   const displayImages = storedImageUrls.length ? storedImageUrls : fallbackImage ? [fallbackImage] : [];
   const storage = getStoredProductStorage(product);
   const colorImages = Object.fromEntries(
@@ -249,7 +253,7 @@ export function serializeStoredProduct(product: StoredProduct, options: { includ
       .map(([color, image]) => [
         color,
         isHttpImageUrl(image)
-          ? image
+          ? `/api/products/${id}/image?color=${encodeURIComponent(color)}&v=${colorImageVersion}`
           : `/api/products/${id}/image?color=${encodeURIComponent(color)}&v=${colorImageVersion}`
       ] as const)
   );
